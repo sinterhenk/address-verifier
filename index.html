@@ -396,8 +396,18 @@
     document.getElementById('file-name').textContent = `✓ ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
     const reader = new FileReader();
     reader.onload = e => {
-      parsedRows = parseCSV(e.target.result);
-      document.getElementById('file-name').textContent += ` — ${parsedRows.length} rows`;
+      const text = e.target.result;
+      const clean = text.replace(/^\uFEFF/, '');
+      const lines = clean.trim().split(/\r?\n/);
+      const sep = lines[0].includes('\t') ? '\t' : ',';
+      const rawHeaders = lines[0].split(sep).map(h => h.trim());
+      const normHeaders = rawHeaders.map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/^_+|_+$/g, ''));
+      parsedRows = parseCSV(text);
+      const sample = parsedRows[0] ? JSON.stringify(parsedRows[0]).substring(0, 200) : '';
+      document.getElementById('file-name').innerHTML =
+        `✓ ${file.name} — ${parsedRows.length} rows<br>` +
+        `<span style="font-size:.78rem;color:#555;">Headers detected: <code>${normHeaders.join(', ')}</code></span><br>` +
+        `<span style="font-size:.78rem;color:#555;">First row: <code>${sample}</code></span>`;
     };
     reader.readAsText(file);
   });
