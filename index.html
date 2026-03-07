@@ -468,6 +468,7 @@
 
     document.getElementById('run-btn').disabled = true;
     document.getElementById('progress-section').style.display = '';
+    document.getElementById('progress-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
     document.getElementById('results-section').style.display = 'none';
     document.getElementById('results-body').innerHTML = '';
     allResults = [];
