@@ -427,12 +427,8 @@
     input.dispatchEvent(new Event('change'));
   });
 
-  // ── TomTom API ──────────────────────────────────────────────────────────────
-  async function tomtomSearch(query, apiKey) {
-    const trimmed = query.trim();
-    if (!trimmed) throw new Error('empty query');
-    const encoded = encodeURIComponent(trimmed);
-    const url = `https://api.tomtom.com/search/2/search/${encoded}.json?key=${apiKey}&limit=1&typeahead=false`;
+  // ── TomTom API helpers ──────────────────────────────────────────────────────
+  async function ttFetch(url) {
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), 15000);
     try {
@@ -441,8 +437,7 @@
       if (res.status === 403) throw new Error('Invalid API key (403)');
       if (res.status === 429) throw new Error('Rate limit hit (429)');
       if (!res.ok) {
-        let body = '';
-        try { body = await res.text(); } catch(_) {}
+        let body = ''; try { body = await res.text(); } catch(_) {}
         throw new Error(`HTTP ${res.status} — ${body.substring(0, 120)}`);
       }
       return res.json();
@@ -451,6 +446,27 @@
       if (e.name === 'AbortError') throw new Error('Request timed out after 15s');
       throw e;
     }
+  }
+
+  // Step 1: geocode an address → {lat, lon, freeformAddress}
+  async function geocode(address, apiKey) {
+    const url = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(address)}.json?key=${apiKey}&limit=1`;
+    const data = await ttFetch(url);
+    const r = data.results?.[0];
+    if (!r) return null;
+    return { lat: r.position.lat, lon: r.position.lon, freeformAddress: r.address?.freeformAddress || '' };
+  }
+
+  // Step 2: nearby POI search around a coordinate
+  async function nearbySearch(bizName, lat, lon, apiKey, radius = 300) {
+    const url = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${apiKey}&lat=${lat}&lon=${lon}&radius=${radius}&query=${encodeURIComponent(bizName)}&limit=3`;
+    return ttFetch(url);
+  }
+
+  // Fallback: fuzzy search combining biz + address
+  async function fuzzySearch(query, apiKey) {
+    const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(query.trim())}.json?key=${apiKey}&limit=1&typeahead=false`;
+    return ttFetch(url);
   }
 
   // ── Scoring ─────────────────────────────────────────────────────────────────
@@ -494,7 +510,7 @@
     const txt0 = document.getElementById('progress-text');
     txt0.textContent = 'Testing API key…';
     try {
-      await tomtomSearch('Amsterdam', apiKey);
+      await fuzzySearch('Amsterdam', apiKey);
     } catch(e) {
       txt0.textContent = `❌ API key test failed: ${e.message}`;
       document.getElementById('run-btn').disabled = false;
@@ -528,30 +544,48 @@
           r.status = 'error';
           throw new Error('skip');
         }
-        const query = bizName ? `${bizName} ${address}` : address;
-        const data  = await tomtomSearch(query, apiKey);
 
-        if (data.results && data.results.length > 0) {
-          const place = data.results[0];
-          r.foundName    = place.poi ? place.poi.name : (place.address?.freeformAddress || '');
-          r.foundAddress = place.address?.freeformAddress || '';
-          r.category     = place.poi?.categories?.[0] || place.type || '';
+        let place = null;
 
-          const lat = place.position?.lat;
-          const lon = place.position?.lon;
-          if (lat && lon) {
-            r.mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
-          }
-
-          const score = scoreName(r.foundName, bizName);
-          if (score === null) {
-            r.status = 'info';
+        if (bizName) {
+          // Two-step: geocode address → nearby POI search for the business
+          const geo = await geocode(address, apiKey);
+          if (geo) {
+            const nearby = await nearbySearch(bizName, geo.lat, geo.lon, apiKey, 300);
+            if (nearby.results?.length > 0) {
+              place = nearby.results[0];
+            } else {
+              // Widen to 1km if nothing close
+              const wide = await nearbySearch(bizName, geo.lat, geo.lon, apiKey, 1000);
+              place = wide.results?.[0] || null;
+            }
+            // If still nothing, fall back to geocode result to at least show the address
+            if (!place) {
+              r.foundName    = '(not found nearby)';
+              r.foundAddress = geo.freeformAddress;
+              r.status       = 'miss';
+            }
           } else {
-            r.status = score >= 0.8 ? 'match' : score >= 0.3 ? 'partial' : 'miss';
+            r.foundName = '(address not geocoded)';
+            r.status    = 'miss';
           }
         } else {
-          r.foundName = '(no results)';
-          r.status = bizName ? 'miss' : 'info';
+          // No biz name: simple address lookup
+          const data = await fuzzySearch(address, apiKey);
+          place = data.results?.[0] || null;
+          if (!place) { r.foundName = '(no results)'; r.status = 'info'; }
+        }
+
+        if (place) {
+          r.foundName    = place.poi?.name || place.address?.freeformAddress || '';
+          r.foundAddress = place.address?.freeformAddress || '';
+          r.category     = place.poi?.categories?.[0] || place.type || '';
+          const lat = place.position?.lat, lon = place.position?.lon;
+          if (lat && lon) r.mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+
+          const score = scoreName(r.foundName, bizName);
+          if (score === null) r.status = 'info';
+          else r.status = score >= 0.8 ? 'match' : score >= 0.3 ? 'partial' : 'miss';
         }
       } catch(err) {
         r.foundName = `Error: ${err.message}`;
