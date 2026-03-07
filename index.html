@@ -420,9 +420,20 @@
   async function tomtomSearch(query, apiKey) {
     const encoded = encodeURIComponent(query);
     const url = `https://api.tomtom.com/search/2/search/${encoded}.json?key=${apiKey}&limit=1&typeahead=false`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(tid);
+      if (res.status === 403) throw new Error('Invalid API key (403)');
+      if (res.status === 429) throw new Error('Rate limit hit (429)');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    } catch(e) {
+      clearTimeout(tid);
+      if (e.name === 'AbortError') throw new Error('Request timed out after 15s');
+      throw e;
+    }
   }
 
   // ── Scoring ─────────────────────────────────────────────────────────────────
@@ -460,6 +471,18 @@
     document.getElementById('results-section').style.display = 'none';
     document.getElementById('results-body').innerHTML = '';
     allResults = [];
+
+    // Quick API key test
+    const txt0 = document.getElementById('progress-text');
+    txt0.textContent = 'Testing API key…';
+    try {
+      await tomtomSearch('Amsterdam', apiKey);
+    } catch(e) {
+      txt0.textContent = `❌ API key test failed: ${e.message}`;
+      document.getElementById('run-btn').disabled = false;
+      return;
+    }
+    txt0.textContent = '✓ API key OK — starting…';
 
     const total = parsedRows.length;
     const bar   = document.getElementById('progress-bar');
