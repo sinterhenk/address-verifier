@@ -279,8 +279,7 @@
       <span class="source-pill pill-osm">OpenStreetMap — unlimited · no key needed</span>
     </div>
     <div class="hint" style="margin-top:12px;">
-      TomTom geocodes each address and searches nearby POIs.
-      OpenStreetMap is used as a fallback when TomTom doesn't find a confident match.
+      TomTom and OpenStreetMap both run for every address. The best match wins and the other appears in the Other Sources column.
     </div>
   </div>
 
@@ -329,7 +328,7 @@
         </svg>
         Check Addresses
       </button>
-      <span style="font-size:.82rem;color:#666;">TomTom searches nearby · OSM used as fallback</span>
+      <span style="font-size:.82rem;color:#666;">TomTom + OSM run in parallel · best match wins</span>
     </div>
   </div>
 
@@ -659,27 +658,15 @@
           r.source       = 'TomTom';
           r.status       = 'info';
         } else {
-          // Step 2: TomTom nearby search
-          const ttCandidates = await ttNearby(bizName, geo.lat, geo.lon, ttKey, 500).catch(() => []);
-          let candidates = [...ttCandidates];
+          // Step 2: TomTom + OSM in parallel
+          const [ttCandidates, osmCandidates] = await Promise.all([
+            ttNearby(bizName, geo.lat, geo.lon, ttKey, 500).catch(() => []),
+            osmNearby(bizName, geo.lat, geo.lon, 600).catch(() => []),
+          ]);
+          const candidates = [...ttCandidates, ...osmCandidates];
 
-          let best = pickBest(candidates, bizName);
-          let bestScore = best ? scoreName(best.name, bizName) : 0;
-
-          let osmCandidates = [];
-          // Step 3: OSM fallback if no confident match yet
-          if (bestScore < 0.8) {
-            txt.textContent = `${i + 1} / ${total}  —  ${address}  (trying OSM…)`;
-            try {
-              osmCandidates = await osmNearby(bizName, geo.lat, geo.lon, 600);
-              candidates.push(...osmCandidates);
-              const newBest = pickBest(candidates, bizName);
-              if (newBest && scoreName(newBest.name, bizName) > bestScore) {
-                best = newBest;
-                bestScore = scoreName(best.name, bizName);
-              }
-            } catch(_) { /* OSM failure is non-fatal */ }
-          }
+          const best = pickBest(candidates, bizName);
+          const bestScore = best ? scoreName(best.name, bizName) : 0;
 
           if (best && best.name) {
             r.foundName    = best.name;
@@ -699,7 +686,6 @@
           const notes = [];
           for (const [src, cands] of Object.entries(sourceGroups)) {
             if (src === r.source) continue; // skip the winner
-            if (osmCandidates.length === 0 && src === 'OSM' && bestScore >= 0.8) continue; // OSM not queried
             const note = sourceSummaryText(cands, bizName);
             if (note) notes.push(`${src}: ${note}`);
           }
