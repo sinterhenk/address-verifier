@@ -467,7 +467,7 @@
     if (!parsedRows.length) { alert('Please upload a CSV file first.'); return; }
 
     document.getElementById('run-btn').disabled = true;
-    document.getElementById('progress-section').style.display = '';
+    document.getElementById('progress-section').style.display = 'block';
     document.getElementById('progress-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
     document.getElementById('results-section').style.display = 'none';
     document.getElementById('results-body').innerHTML = '';
@@ -567,7 +567,7 @@
       ${counts.error   ? `<span class="chip chip-error">⚠ ${counts.error} Error</span>`        : ''}
     `;
 
-    document.getElementById('results-section').style.display = '';
+    document.getElementById('results-section').style.display = 'block';
     document.getElementById('run-btn').disabled = false;
   }
 
