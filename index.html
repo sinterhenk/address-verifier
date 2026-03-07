@@ -447,9 +447,9 @@
     return { lat: r.position.lat, lon: r.position.lon, freeformAddress: r.address?.freeformAddress || '' };
   }
 
-  // Step 2: nearby POI search around a coordinate
-  async function nearbySearch(bizName, lat, lon, apiKey, radius = 300) {
-    const url = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${apiKey}&lat=${lat}&lon=${lon}&radius=${radius}&query=${encodeURIComponent(bizName)}&limit=3`;
+  // Step 2: fuzzy search for biz name biased toward coordinates
+  async function nearbySearch(bizName, lat, lon, apiKey, radius = 500) {
+    const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(bizName)}.json?key=${apiKey}&lat=${lat}&lon=${lon}&radius=${radius}&limit=3&typeahead=false`;
     return ttFetch(url);
   }
 
@@ -541,7 +541,7 @@
           // Two-step: geocode address → nearby POI search for the business
           const geo = await geocode(address, apiKey);
           if (geo) {
-            const nearby = await nearbySearch(bizName, geo.lat, geo.lon, apiKey, 300);
+            const nearby = await nearbySearch(bizName, geo.lat, geo.lon, apiKey, 500);
             if (nearby.results?.length > 0) {
               place = nearby.results[0];
             }
