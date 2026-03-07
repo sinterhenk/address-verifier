@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Address Verifier — TomTom</title>
+  <title>Address Verifier — TomTom + Foursquare</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -106,6 +106,15 @@
       font-family: monospace;
       font-size: .85em;
     }
+    .hint-blue {
+      background: #eff6ff;
+      border-left: 3px solid #3b82f6;
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      font-size: .82rem;
+      color: #555;
+      margin-top: 12px;
+    }
 
     .btn {
       display: inline-flex;
@@ -160,6 +169,7 @@
     .chip-match   { background: #e6f4ea; color: #137333; }
     .chip-partial { background: #fef7e0; color: #b06000; }
     .chip-miss    { background: #fce8e6; color: #c5221f; }
+    .chip-closed  { background: #fff3cd; color: #856404; }
     .chip-error   { background: #f3e8ff; color: #7c3aed; }
 
     .table-wrap { overflow-x: auto; }
@@ -197,7 +207,19 @@
     .badge-match   { background: #e6f4ea; color: #137333; }
     .badge-partial { background: #fef7e0; color: #b06000; }
     .badge-miss    { background: #fce8e6; color: #c5221f; }
+    .badge-closed  { background: #fff3cd; color: #856404; }
     .badge-error   { background: #f3e8ff; color: #7c3aed; }
+
+    .source-tag {
+      display: inline-block;
+      font-size: .72rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .source-tomtom      { background: #e8f0fe; color: #1967d2; }
+    .source-foursquare  { background: #fff0e6; color: #c75300; }
+    .source-none        { background: #f0f2f5; color: #888; }
 
     .place-link { color: #df1b12; text-decoration: none; font-size: .82rem; }
     .place-link:hover { text-decoration: underline; }
@@ -228,22 +250,33 @@
     <circle cx="12" cy="9" r="2.5" fill="#df1b12"/>
   </svg>
   <div>
-    <h1>Address Verifier — TomTom</h1>
-    <p>Check what is actually located at your addresses using TomTom Places &nbsp;·&nbsp; <small>v4 · 2026-03-07</small></p>
+    <h1>Address Verifier — TomTom + Foursquare</h1>
+    <p>TomTom Places as primary source · Foursquare as backup · detects closed businesses &nbsp;·&nbsp; <small>v5 · 2026-03-07</small></p>
   </div>
 </header>
 
 <main>
 
-  <!-- Step 1: API Key -->
+  <!-- Step 1: API Keys -->
   <div class="card">
-    <h2><span class="step-num">1</span> TomTom API Key</h2>
-    <label for="api-key">API Key</label>
-    <input type="password" id="api-key" placeholder="Paste your TomTom API key…" autocomplete="off" />
-    <div class="hint">
-      Get a free key at <strong>developer.tomtom.com</strong> → Sign up → My Dashboard → Add new app.
-      Free tier: <strong>2,500 requests/day</strong>, no credit card required.
-      Your key stays in your browser only.
+    <h2><span class="step-num">1</span> API Keys</h2>
+    <div class="row">
+      <div class="col">
+        <label for="api-key">TomTom API Key <em style="font-weight:400;color:#888;">(primary)</em></label>
+        <input type="password" id="api-key" placeholder="Paste your TomTom API key…" autocomplete="off" />
+        <div class="hint">
+          Get a free key at <strong>developer.tomtom.com</strong> → My Dashboard → Add new app.
+          Free tier: <strong>2,500 req/day</strong>, no credit card needed.
+        </div>
+      </div>
+      <div class="col">
+        <label for="fs-api-key">Foursquare API Key <em style="font-weight:400;color:#888;">(backup · optional)</em></label>
+        <input type="password" id="fs-api-key" placeholder="Paste your Foursquare API key…" autocomplete="off" />
+        <div class="hint-blue">
+          Get a free key at <strong>foursquare.com/developers</strong> → Create app → API Key.
+          Used only when TomTom finds nothing. Also detects <strong>closed</strong> businesses.
+        </div>
+      </div>
     </div>
   </div>
 
@@ -253,7 +286,7 @@
     <input type="text" id="biz-name" placeholder="e.g. Shoe Carnival" />
     <div class="hint">
       If provided, each result is marked <strong>Match</strong> / <strong>Partial</strong> / <strong>Not found</strong>
-      based on whether the name TomTom returns contains the expected business name.
+      based on whether the name returned matches the expected business.
       Leave blank to simply see what is at each address.
     </div>
   </div>
@@ -292,7 +325,7 @@
         </svg>
         Check Addresses
       </button>
-      <span style="font-size:.82rem;color:#666;">1 request per address · 2,500/day free</span>
+      <span style="font-size:.82rem;color:#666;">TomTom primary · Foursquare backup if key provided</span>
     </div>
   </div>
 
@@ -328,6 +361,7 @@
             <th>Found Name</th>
             <th>Found Address</th>
             <th>Category</th>
+            <th>Source</th>
             <th>Status</th>
             <th>Maps Link</th>
           </tr>
@@ -438,7 +472,6 @@
     }
   }
 
-  // Step 1: resolve address to coordinates using fuzzy search
   async function geocode(address, apiKey) {
     const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(address)}.json?key=${apiKey}&limit=1&typeahead=false`;
     const data = await ttFetch(url);
@@ -447,16 +480,49 @@
     return { lat: r.position.lat, lon: r.position.lon, freeformAddress: r.address?.freeformAddress || '' };
   }
 
-  // Step 2: fuzzy search for biz name biased toward coordinates
   async function nearbySearch(bizName, lat, lon, apiKey, radius = 500) {
     const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(bizName)}.json?key=${apiKey}&lat=${lat}&lon=${lon}&radius=${radius}&limit=3&typeahead=false`;
     return ttFetch(url);
   }
 
-  // Fallback: fuzzy search combining biz + address
   async function fuzzySearch(query, apiKey) {
     const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(query.trim())}.json?key=${apiKey}&limit=1&typeahead=false`;
     return ttFetch(url);
+  }
+
+  // ── Foursquare API helpers ──────────────────────────────────────────────────
+  async function fsFetch(url, fsApiKey) {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const res = await fetch(url, {
+        headers: { 'Authorization': fsApiKey, 'Accept': 'application/json' },
+        signal: ctrl.signal,
+      });
+      clearTimeout(tid);
+      if (res.status === 401) throw new Error('Invalid Foursquare API key (401)');
+      if (res.status === 429) throw new Error('Foursquare rate limit (429)');
+      if (!res.ok) {
+        let body = ''; try { body = await res.text(); } catch(_) {}
+        throw new Error(`Foursquare HTTP ${res.status} — ${body.substring(0, 120)}`);
+      }
+      return res.json();
+    } catch(e) {
+      clearTimeout(tid);
+      if (e.name === 'AbortError') throw new Error('Foursquare request timed out after 15s');
+      throw e;
+    }
+  }
+
+  async function foursquareSearch(bizName, lat, lon, fsApiKey, radius = 500) {
+    const params = new URLSearchParams({
+      query: bizName,
+      ll: `${lat},${lon}`,
+      radius: radius,
+      limit: 3,
+      fields: 'fsq_id,name,location,categories,closed_bucket,geocodes',
+    });
+    return fsFetch(`https://api.foursquare.com/v3/places/search?${params}`, fsApiKey);
   }
 
   // ── Scoring ─────────────────────────────────────────────────────────────────
@@ -475,18 +541,26 @@
     if (status === 'match')   return `<span class="status-badge badge-match">✓ Match</span>`;
     if (status === 'partial') return `<span class="status-badge badge-partial">~ Partial</span>`;
     if (status === 'miss')    return `<span class="status-badge badge-miss">✗ Not found</span>`;
+    if (status === 'closed')  return `<span class="status-badge badge-closed">⊘ Closed</span>`;
     if (status === 'error')   return `<span class="status-badge badge-error">⚠ Error</span>`;
     return `<span class="status-badge" style="background:#e8eaed;color:#333;">— Info</span>`;
+  }
+
+  function sourceTagHTML(source) {
+    if (source === 'tomtom')      return `<span class="source-tag source-tomtom">TomTom</span>`;
+    if (source === 'foursquare')  return `<span class="source-tag source-foursquare">Foursquare</span>`;
+    return `<span class="source-tag source-none">—</span>`;
   }
 
   // ── Main runner ─────────────────────────────────────────────────────────────
   let allResults = [];
 
   async function runCheck() {
-    const apiKey  = document.getElementById('api-key').value.trim();
-    const bizName = document.getElementById('biz-name').value.trim();
+    const apiKey   = document.getElementById('api-key').value.trim();
+    const fsApiKey = document.getElementById('fs-api-key').value.trim();
+    const bizName  = document.getElementById('biz-name').value.trim();
 
-    if (!apiKey)          { alert('Please enter your TomTom API key.'); return; }
+    if (!apiKey)            { alert('Please enter your TomTom API key.'); return; }
     if (!parsedRows.length) { alert('Please upload a CSV file first.'); return; }
 
     document.getElementById('run-btn').disabled = true;
@@ -496,23 +570,23 @@
     document.getElementById('results-body').innerHTML = '';
     allResults = [];
 
-    // Quick API key test
+    // Quick TomTom API key test
     const txt0 = document.getElementById('progress-text');
-    txt0.textContent = 'Testing API key…';
+    txt0.textContent = 'Testing TomTom API key…';
     try {
       await fuzzySearch('Amsterdam', apiKey);
     } catch(e) {
-      txt0.textContent = `❌ API key test failed: ${e.message}`;
+      txt0.textContent = `❌ TomTom API key test failed: ${e.message}`;
       document.getElementById('run-btn').disabled = false;
       return;
     }
-    txt0.textContent = '✓ API key OK — starting…';
+    txt0.textContent = '✓ TomTom API key OK — starting…';
 
     const total = parsedRows.length;
     const bar   = document.getElementById('progress-bar');
     const txt   = document.getElementById('progress-text');
     const tbody = document.getElementById('results-body');
-    let counts  = { match: 0, partial: 0, miss: 0, error: 0, info: 0 };
+    let counts  = { match: 0, partial: 0, miss: 0, closed: 0, error: 0, info: 0 };
 
     for (let i = 0; i < total; i++) {
       const row     = parsedRows[i];
@@ -525,7 +599,7 @@
       let r = {
         index: i + 1, label, inputAddress: address,
         foundName: '', foundAddress: '', category: '',
-        status: 'error', mapsUrl: '',
+        status: 'error', mapsUrl: '', source: '', isClosed: false,
       };
 
       try {
@@ -536,17 +610,65 @@
         }
 
         let place = null;
+        let geo   = null;
 
         if (bizName) {
-          // Two-step: geocode address → nearby POI search for the business
-          const geo = await geocode(address, apiKey);
+          // Step 1: geocode address via TomTom
+          geo = await geocode(address, apiKey);
+
           if (geo) {
+            // Step 2: search for POI near coords via TomTom
             const nearby = await nearbySearch(bizName, geo.lat, geo.lon, apiKey, 500);
             if (nearby.results?.length > 0) {
               place = nearby.results[0];
+              r.source = 'tomtom';
             }
-            // If still nothing, fall back to geocode result to at least show the address
-            if (!place) {
+
+            // Step 3: TomTom found nothing — try Foursquare as backup
+            if (!place && fsApiKey) {
+              await sleep(150);
+              try {
+                txt.textContent = `${i + 1} / ${total}  —  ${address}  [Foursquare backup…]`;
+                const fsData = await foursquareSearch(bizName, geo.lat, geo.lon, fsApiKey);
+                if (fsData.results?.length > 0) {
+                  const fp = fsData.results[0];
+                  r.source      = 'foursquare';
+                  r.foundName   = fp.name || '';
+                  r.foundAddress = fp.location?.formatted_address || [fp.location?.address, fp.location?.locality, fp.location?.region].filter(Boolean).join(', ');
+                  r.category    = fp.categories?.[0]?.name || '';
+
+                  // Closed detection from Foursquare closed_bucket field
+                  const bucket  = fp.closed_bucket || '';
+                  r.isClosed    = bucket === 'VeryLikelyClosed' || bucket === 'LikelyClosed';
+
+                  const fsLat = fp.geocodes?.main?.latitude;
+                  const fsLon = fp.geocodes?.main?.longitude;
+                  if (fsLat && fsLon) r.mapsUrl = `https://www.google.com/maps?q=${fsLat},${fsLon}`;
+                  else r.mapsUrl = `https://www.google.com/maps?q=${geo.lat},${geo.lon}`;
+
+                  const score = scoreName(r.foundName, bizName);
+                  if (r.isClosed) {
+                    r.status = score >= 0.3 ? 'closed' : 'miss';
+                  } else {
+                    r.status = score >= 0.8 ? 'match' : score >= 0.3 ? 'partial' : 'miss';
+                  }
+                } else {
+                  // Neither API found it
+                  r.source       = 'none';
+                  r.foundName    = '(not found by TomTom or Foursquare)';
+                  r.foundAddress = geo.freeformAddress;
+                  r.status       = 'miss';
+                }
+              } catch(fsErr) {
+                // Foursquare error — fall back to TomTom miss
+                r.source       = 'tomtom';
+                r.foundName    = `(not found nearby — Foursquare error: ${fsErr.message})`;
+                r.foundAddress = geo.freeformAddress;
+                r.status       = 'miss';
+              }
+            } else if (!place) {
+              // No Foursquare key configured
+              r.source       = 'tomtom';
               r.foundName    = '(not found nearby)';
               r.foundAddress = geo.freeformAddress;
               r.status       = 'miss';
@@ -554,14 +676,17 @@
           } else {
             r.foundName = '(address not geocoded)';
             r.status    = 'miss';
+            r.source    = 'none';
           }
         } else {
-          // No biz name: simple address lookup
+          // No biz name: simple address lookup via TomTom
           const data = await fuzzySearch(address, apiKey);
           place = data.results?.[0] || null;
+          r.source = 'tomtom';
           if (!place) { r.foundName = '(no results)'; r.status = 'info'; }
         }
 
+        // Populate result from TomTom place object
         if (place) {
           r.foundName    = place.poi?.name || place.address?.freeformAddress || '';
           r.foundAddress = place.address?.freeformAddress || '';
@@ -574,8 +699,10 @@
           else r.status = score >= 0.8 ? 'match' : score >= 0.3 ? 'partial' : 'miss';
         }
       } catch(err) {
-        r.foundName = `Error: ${err.message}`;
-        r.status = 'error';
+        if (err.message !== 'skip') {
+          r.foundName = `Error: ${err.message}`;
+          r.status = 'error';
+        }
       }
 
       counts[r.status] = (counts[r.status] || 0) + 1;
@@ -589,6 +716,7 @@
         <td><strong>${esc(r.foundName)}</strong></td>
         <td style="font-size:.8rem;color:#666;">${esc(r.foundAddress)}</td>
         <td><span class="types-tag">${esc(r.category)}</span></td>
+        <td>${sourceTagHTML(r.source)}</td>
         <td>${badgeHTML(r.status)}</td>
         <td>${r.mapsUrl ? `<a class="place-link" href="${r.mapsUrl}" target="_blank">View ↗</a>` : ''}</td>
       `;
@@ -602,11 +730,12 @@
 
     document.getElementById('summary-chips').innerHTML = `
       <span class="chip chip-total">${total} Total</span>
-      ${counts.match   ? `<span class="chip chip-match">✓ ${counts.match} Match</span>`        : ''}
-      ${counts.partial ? `<span class="chip chip-partial">~ ${counts.partial} Partial</span>`  : ''}
-      ${counts.miss    ? `<span class="chip chip-miss">✗ ${counts.miss} Not found</span>`      : ''}
-      ${counts.info    ? `<span class="chip chip-total">${counts.info} Info</span>`             : ''}
-      ${counts.error   ? `<span class="chip chip-error">⚠ ${counts.error} Error</span>`        : ''}
+      ${counts.match   ? `<span class="chip chip-match">✓ ${counts.match} Match</span>`           : ''}
+      ${counts.partial ? `<span class="chip chip-partial">~ ${counts.partial} Partial</span>`     : ''}
+      ${counts.miss    ? `<span class="chip chip-miss">✗ ${counts.miss} Not found</span>`         : ''}
+      ${counts.closed  ? `<span class="chip chip-closed">⊘ ${counts.closed} Closed</span>`       : ''}
+      ${counts.info    ? `<span class="chip chip-total">${counts.info} Info</span>`               : ''}
+      ${counts.error   ? `<span class="chip chip-error">⚠ ${counts.error} Error</span>`           : ''}
     `;
 
     document.getElementById('results-section').style.display = 'block';
@@ -615,9 +744,10 @@
 
   // ── Export ──────────────────────────────────────────────────────────────────
   function exportCSV() {
-    const headers = ['#', 'Label', 'Input Address', 'Found Name', 'Found Address', 'Category', 'Status', 'Maps Link'];
+    const headers = ['#', 'Label', 'Input Address', 'Found Name', 'Found Address', 'Category', 'Source', 'Closed', 'Status', 'Maps Link'];
     const rows = allResults.map(r => [
-      r.index, r.label, r.inputAddress, r.foundName, r.foundAddress, r.category, r.status, r.mapsUrl
+      r.index, r.label, r.inputAddress, r.foundName, r.foundAddress, r.category,
+      r.source, r.isClosed ? 'yes' : 'no', r.status, r.mapsUrl,
     ]);
     const csv = [headers, ...rows].map(r =>
       r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')
