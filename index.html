@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Address Verifier — TomTom</title>
+  <title>Address Verifier — Multi-Source</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -71,6 +71,25 @@
 
     .row { display: flex; gap: 14px; flex-wrap: wrap; }
     .col { flex: 1; min-width: 200px; }
+
+    .source-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .source-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: .78rem;
+      font-weight: 600;
+    }
+    .pill-tt  { background: #e8f0fe; color: #1a73e8; }
+    .pill-fsq { background: #fce8e6; color: #c5221f; }
+    .pill-osm { background: #e6f4ea; color: #137333; }
 
     .upload-zone {
       border: 2px dashed #d1d5db;
@@ -212,6 +231,19 @@
       margin: 1px;
     }
 
+    .src-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: .72rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .src-tt  { background: #e8f0fe; color: #1a73e8; }
+    .src-fsq { background: #fce8e6; color: #c5221f; }
+    .src-osm { background: #e6f4ea; color: #137333; }
+    .src-none { background: #f0f2f5; color: #999; }
+
     .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
 
     @media (max-width: 600px) {
@@ -228,22 +260,35 @@
     <circle cx="12" cy="9" r="2.5" fill="#df1b12"/>
   </svg>
   <div>
-    <h1>Address Verifier — TomTom</h1>
-    <p>Check what is actually located at your addresses using TomTom Places &nbsp;·&nbsp; <small>v4 · 2026-03-07</small></p>
+    <h1>Address Verifier — Multi-Source</h1>
+    <p>TomTom · Foursquare · OpenStreetMap &nbsp;·&nbsp; <small>v5 · 2026-03-07</small></p>
   </div>
 </header>
 
 <main>
 
-  <!-- Step 1: API Key -->
+  <!-- Step 1: API Keys -->
   <div class="card">
-    <h2><span class="step-num">1</span> TomTom API Key</h2>
-    <label for="api-key">API Key</label>
-    <input type="password" id="api-key" placeholder="Paste your TomTom API key…" autocomplete="off" />
-    <div class="hint">
-      Get a free key at <strong>developer.tomtom.com</strong> → Sign up → My Dashboard → Add new app.
-      Free tier: <strong>2,500 requests/day</strong>, no credit card required.
-      Your key stays in your browser only.
+    <h2><span class="step-num">1</span> API Keys</h2>
+    <div class="row">
+      <div class="col">
+        <label for="tt-key">TomTom API Key <span style="color:#df1b12">*</span></label>
+        <input type="password" id="tt-key" placeholder="Required — developer.tomtom.com" autocomplete="off" />
+      </div>
+      <div class="col">
+        <label for="fsq-key">Foursquare API Key <span style="color:#999;font-weight:400">(optional)</span></label>
+        <input type="password" id="fsq-key" placeholder="Optional — foursquare.com/developers" autocomplete="off" />
+      </div>
+    </div>
+    <div class="source-pills" style="margin-top:14px;">
+      <span class="source-pill pill-tt">TomTom — 2,500 req/day free · no card</span>
+      <span class="source-pill pill-fsq">Foursquare — 1,000 req/day free · no card</span>
+      <span class="source-pill pill-osm">OpenStreetMap — unlimited · no key needed</span>
+    </div>
+    <div class="hint" style="margin-top:12px;">
+      TomTom is used to geocode each address and search nearby POIs.
+      Foursquare and OpenStreetMap are used as fallbacks when TomTom doesn't find a confident match.
+      OSM is only queried when needed (to respect rate limits).
     </div>
   </div>
 
@@ -253,8 +298,8 @@
     <input type="text" id="biz-name" placeholder="e.g. Shoe Carnival" />
     <div class="hint">
       If provided, each result is marked <strong>Match</strong> / <strong>Partial</strong> / <strong>Not found</strong>
-      based on whether the name TomTom returns contains the expected business name.
-      Leave blank to simply see what is at each address.
+      based on whether the name found contains the expected business name.
+      All three sources are checked; the best match wins.
     </div>
   </div>
 
@@ -292,7 +337,7 @@
         </svg>
         Check Addresses
       </button>
-      <span style="font-size:.82rem;color:#666;">1 request per address · 2,500/day free</span>
+      <span style="font-size:.82rem;color:#666;">TomTom + Foursquare run in parallel · OSM used as fallback only</span>
     </div>
   </div>
 
@@ -328,7 +373,9 @@
             <th>Found Name</th>
             <th>Found Address</th>
             <th>Category</th>
+            <th>Source</th>
             <th>Status</th>
+            <th>Other Sources</th>
             <th>Maps Link</th>
           </tr>
         </thead>
@@ -342,7 +389,7 @@
 <script>
   // ── CSV parser ──────────────────────────────────────────────────────────────
   function parseCSV(text) {
-    const clean = text.replace(/^\uFEFF/, '');   // strip Excel BOM
+    const clean = text.replace(/^\uFEFF/, '');
     const lines = clean.trim().split(/\r?\n/);
     const sep = lines[0].includes('\t') ? '\t' : lines[0].includes(';') ? ';' : ',';
     const headers = splitLine(lines[0], sep).map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/^_+|_+$/g, ''));
@@ -417,15 +464,13 @@
     input.dispatchEvent(new Event('change'));
   });
 
-  // ── TomTom API helpers ──────────────────────────────────────────────────────
-  async function ttFetch(url) {
+  // ── Generic fetch with timeout ───────────────────────────────────────────────
+  async function apiFetch(url, opts = {}, timeoutMs = 15000) {
     const ctrl = new AbortController();
-    const tid  = setTimeout(() => ctrl.abort(), 15000);
+    const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      const res = await fetch(url, { signal: ctrl.signal });
+      const res = await fetch(url, { ...opts, signal: ctrl.signal });
       clearTimeout(tid);
-      if (res.status === 403) throw new Error('Invalid API key (403)');
-      if (res.status === 429) throw new Error('Rate limit hit (429)');
       if (!res.ok) {
         let body = ''; try { body = await res.text(); } catch(_) {}
         throw new Error(`HTTP ${res.status} — ${body.substring(0, 120)}`);
@@ -438,28 +483,99 @@
     }
   }
 
-  // Step 1: resolve address to coordinates using fuzzy search
-  async function geocode(address, apiKey) {
-    const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(address)}.json?key=${apiKey}&limit=1&typeahead=false`;
+  // ── TomTom helpers ──────────────────────────────────────────────────────────
+  function ttFetch(url) {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 15000);
+    return fetch(url, { signal: ctrl.signal }).then(res => {
+      clearTimeout(tid);
+      if (res.status === 403) throw new Error('Invalid TomTom API key (403)');
+      if (res.status === 429) throw new Error('TomTom rate limit (429)');
+      if (!res.ok) throw new Error(`TomTom HTTP ${res.status}`);
+      return res.json();
+    }).catch(e => { clearTimeout(tid); throw e; });
+  }
+
+  async function geocode(address, ttKey) {
+    const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(address)}.json?key=${ttKey}&limit=1&typeahead=false`;
     const data = await ttFetch(url);
     const r = data.results?.[0];
     if (!r) return null;
     return { lat: r.position.lat, lon: r.position.lon, freeformAddress: r.address?.freeformAddress || '' };
   }
 
-  // Step 2: fuzzy search for biz name biased toward coordinates
-  async function nearbySearch(bizName, lat, lon, apiKey, radius = 500) {
-    const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(bizName)}.json?key=${apiKey}&lat=${lat}&lon=${lon}&radius=${radius}&limit=3&typeahead=false`;
-    return ttFetch(url);
+  async function ttNearby(bizName, lat, lon, ttKey, radius = 500) {
+    const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(bizName)}.json?key=${ttKey}&lat=${lat}&lon=${lon}&radius=${radius}&limit=5&typeahead=false`;
+    const data = await ttFetch(url);
+    return (data.results || []).map(p => ({
+      source: 'TomTom',
+      name:    p.poi?.name || p.address?.freeformAddress || '',
+      address: p.address?.freeformAddress || '',
+      category: p.poi?.categories?.[0] || p.type || '',
+      lat:     p.position?.lat,
+      lon:     p.position?.lon,
+    }));
   }
 
-  // Fallback: fuzzy search combining biz + address
-  async function fuzzySearch(query, apiKey) {
-    const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(query.trim())}.json?key=${apiKey}&limit=1&typeahead=false`;
-    return ttFetch(url);
+  // ── Foursquare v3 helper ─────────────────────────────────────────────────────
+  async function fsqNearby(bizName, lat, lon, fsqKey, radius = 500) {
+    const url = `https://api.foursquare.com/v3/places/search?query=${encodeURIComponent(bizName)}&ll=${lat},${lon}&radius=${radius}&limit=5`;
+    const data = await apiFetch(url, {
+      headers: { 'Authorization': fsqKey, 'Accept': 'application/json' }
+    });
+    return (data.results || []).map(p => ({
+      source: 'Foursquare',
+      name:    p.name || '',
+      address: p.location?.formatted_address || '',
+      category: p.categories?.[0]?.name || '',
+      lat:     p.geocodes?.main?.latitude,
+      lon:     p.geocodes?.main?.longitude,
+    }));
+  }
+
+  // ── OpenStreetMap Overpass helper ────────────────────────────────────────────
+  async function osmNearby(bizName, lat, lon, radius = 600) {
+    // Escape special regex chars in name for Overpass
+    const escapedName = bizName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const q = `[out:json][timeout:12];(node["name"~"${escapedName}",i](around:${radius},${lat},${lon});way["name"~"${escapedName}",i](around:${radius},${lat},${lon}););out center 5;`;
+    const data = await apiFetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'data=' + encodeURIComponent(q),
+    }, 20000);
+    return (data.elements || []).map(el => {
+      const tags = el.tags || {};
+      const elLat = el.lat ?? el.center?.lat;
+      const elLon = el.lon ?? el.center?.lon;
+      const addrParts = [tags['addr:housenumber'], tags['addr:street'], tags['addr:city'], tags['addr:state']].filter(Boolean);
+      return {
+        source: 'OSM',
+        name:    tags.name || '',
+        address: addrParts.join(' '),
+        category: tags.shop || tags.amenity || tags.brand || '',
+        lat:     elLat,
+        lon:     elLon,
+      };
+    });
   }
 
   // ── Scoring ─────────────────────────────────────────────────────────────────
+  // Detect if a name string indicates a permanently closed or gone business
+  function isClosed(name) {
+    return /permanently\s+closed|closed down|out of business|no longer (here|open)|demolished/i.test(name);
+  }
+
+  // Summarise what a source found relative to the expected business name
+  function sourceSummaryText(candidates, bizName) {
+    if (!candidates.length) return 'not found';
+    const best = pickBest(candidates, bizName);
+    if (!best || !best.name) return 'not found';
+    const score = scoreName(best.name, bizName);
+    if (score >= 0.8) return null; // winner — no note needed
+    if (isClosed(best.name)) return `found closed: ${best.name}`;
+    return `found: ${best.name}`;
+  }
+
   function scoreName(found, expected) {
     if (!expected) return null;
     const f = found.toLowerCase();
@@ -471,6 +587,17 @@
     return hits / ew.length;
   }
 
+  // Pick the highest-scoring candidate from an array
+  function pickBest(candidates, bizName) {
+    if (!candidates.length) return null;
+    if (!bizName) return candidates[0];
+    return candidates.reduce((best, c) => {
+      const s = scoreName(c.name, bizName);
+      const bs = scoreName(best.name, bizName);
+      return s > bs ? c : best;
+    });
+  }
+
   function badgeHTML(status) {
     if (status === 'match')   return `<span class="status-badge badge-match">✓ Match</span>`;
     if (status === 'partial') return `<span class="status-badge badge-partial">~ Partial</span>`;
@@ -479,14 +606,22 @@
     return `<span class="status-badge" style="background:#e8eaed;color:#333;">— Info</span>`;
   }
 
+  function sourceBadge(src) {
+    if (src === 'TomTom')     return `<span class="src-badge src-tt">TomTom</span>`;
+    if (src === 'Foursquare') return `<span class="src-badge src-fsq">Foursquare</span>`;
+    if (src === 'OSM')        return `<span class="src-badge src-osm">OSM</span>`;
+    return `<span class="src-badge src-none">—</span>`;
+  }
+
   // ── Main runner ─────────────────────────────────────────────────────────────
   let allResults = [];
 
   async function runCheck() {
-    const apiKey  = document.getElementById('api-key').value.trim();
+    const ttKey   = document.getElementById('tt-key').value.trim();
+    const fsqKey  = document.getElementById('fsq-key').value.trim();
     const bizName = document.getElementById('biz-name').value.trim();
 
-    if (!apiKey)          { alert('Please enter your TomTom API key.'); return; }
+    if (!ttKey)             { alert('Please enter your TomTom API key.'); return; }
     if (!parsedRows.length) { alert('Please upload a CSV file first.'); return; }
 
     document.getElementById('run-btn').disabled = true;
@@ -498,15 +633,15 @@
 
     // Quick API key test
     const txt0 = document.getElementById('progress-text');
-    txt0.textContent = 'Testing API key…';
+    txt0.textContent = 'Testing TomTom API key…';
     try {
-      await fuzzySearch('Amsterdam', apiKey);
+      await ttFetch(`https://api.tomtom.com/search/2/search/Amsterdam.json?key=${ttKey}&limit=1`);
     } catch(e) {
-      txt0.textContent = `❌ API key test failed: ${e.message}`;
+      txt0.textContent = `❌ TomTom key test failed: ${e.message}`;
       document.getElementById('run-btn').disabled = false;
       return;
     }
-    txt0.textContent = '✓ API key OK — starting…';
+    txt0.textContent = '✓ TomTom key OK — starting…';
 
     const total = parsedRows.length;
     const bar   = document.getElementById('progress-bar');
@@ -525,7 +660,7 @@
       let r = {
         index: i + 1, label, inputAddress: address,
         foundName: '', foundAddress: '', category: '',
-        status: 'error', mapsUrl: '',
+        status: 'error', mapsUrl: '', source: '', otherSources: '',
       };
 
       try {
@@ -535,53 +670,90 @@
           throw new Error('skip');
         }
 
-        let place = null;
-
-        if (bizName) {
-          // Two-step: geocode address → nearby POI search for the business
-          const geo = await geocode(address, apiKey);
-          if (geo) {
-            const nearby = await nearbySearch(bizName, geo.lat, geo.lon, apiKey, 500);
-            if (nearby.results?.length > 0) {
-              place = nearby.results[0];
-            }
-            // If still nothing, fall back to geocode result to at least show the address
-            if (!place) {
-              r.foundName    = '(not found nearby)';
-              r.foundAddress = geo.freeformAddress;
-              r.status       = 'miss';
-            }
-          } else {
-            r.foundName = '(address not geocoded)';
-            r.status    = 'miss';
-          }
-        } else {
-          // No biz name: simple address lookup
-          const data = await fuzzySearch(address, apiKey);
-          place = data.results?.[0] || null;
-          if (!place) { r.foundName = '(no results)'; r.status = 'info'; }
+        // Step 1: Geocode with TomTom
+        const geo = await geocode(address, ttKey);
+        if (!geo) {
+          r.foundName = '(address not geocoded)';
+          r.status = 'miss';
+          throw new Error('skip');
         }
 
-        if (place) {
-          r.foundName    = place.poi?.name || place.address?.freeformAddress || '';
-          r.foundAddress = place.address?.freeformAddress || '';
-          r.category     = place.poi?.categories?.[0] || place.type || '';
-          const lat = place.position?.lat, lon = place.position?.lon;
-          if (lat && lon) r.mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+        if (!bizName) {
+          // No biz name: just show what geocode found
+          r.foundName    = geo.freeformAddress;
+          r.foundAddress = geo.freeformAddress;
+          r.source       = 'TomTom';
+          r.status       = 'info';
+        } else {
+          // Step 2: TomTom nearby + Foursquare in parallel
+          const [ttSettled, fsqSettled] = await Promise.allSettled([
+            ttNearby(bizName, geo.lat, geo.lon, ttKey, 500),
+            fsqKey ? fsqNearby(bizName, geo.lat, geo.lon, fsqKey, 500) : Promise.resolve([]),
+          ]);
 
-          const score = scoreName(r.foundName, bizName);
-          if (score === null) r.status = 'info';
-          else r.status = score >= 0.8 ? 'match' : score >= 0.3 ? 'partial' : 'miss';
+          const ttCandidates  = ttSettled.status  === 'fulfilled' ? ttSettled.value  : [];
+          const fsqCandidates = fsqSettled.status === 'fulfilled' ? fsqSettled.value : [];
+          let candidates = [...ttCandidates, ...fsqCandidates];
+
+          let best = pickBest(candidates, bizName);
+          let bestScore = best ? scoreName(best.name, bizName) : 0;
+
+          let osmCandidates = [];
+          // Step 3: OSM fallback if no confident match yet
+          if (bestScore < 0.8) {
+            txt.textContent = `${i + 1} / ${total}  —  ${address}  (trying OSM…)`;
+            try {
+              osmCandidates = await osmNearby(bizName, geo.lat, geo.lon, 600);
+              candidates.push(...osmCandidates);
+              const newBest = pickBest(candidates, bizName);
+              if (newBest && scoreName(newBest.name, bizName) > bestScore) {
+                best = newBest;
+                bestScore = scoreName(best.name, bizName);
+              }
+            } catch(_) { /* OSM failure is non-fatal */ }
+          }
+
+          if (best && best.name) {
+            r.foundName    = best.name;
+            r.foundAddress = best.address;
+            r.category     = best.category;
+            r.source       = best.source;
+            if (best.lat && best.lon) r.mapsUrl = `https://www.google.com/maps?q=${best.lat},${best.lon}`;
+            r.status = bestScore >= 0.8 ? 'match' : bestScore >= 0.3 ? 'partial' : 'miss';
+          } else {
+            r.foundName    = '(not found nearby)';
+            r.foundAddress = geo.freeformAddress;
+            r.status       = 'miss';
+          }
+
+          // Build "other sources" notes for non-winning sources
+          const sourceGroups = { TomTom: ttCandidates, Foursquare: fsqCandidates, OSM: osmCandidates };
+          const notes = [];
+          for (const [src, cands] of Object.entries(sourceGroups)) {
+            if (src === r.source) continue; // skip the winner
+            if (!fsqKey && src === 'Foursquare') continue; // skip if not configured
+            if (osmCandidates.length === 0 && src === 'OSM' && bestScore >= 0.8) continue; // OSM not queried
+            const note = sourceSummaryText(cands, bizName);
+            if (note) notes.push(`${src}: ${note}`);
+          }
+          r.otherSources = notes.join(' · ');
         }
       } catch(err) {
-        r.foundName = `Error: ${err.message}`;
-        r.status = 'error';
+        if (err.message !== 'skip') {
+          r.foundName = `Error: ${err.message}`;
+          r.status = 'error';
+        }
       }
 
       counts[r.status] = (counts[r.status] || 0) + 1;
       allResults.push(r);
 
       const tr = document.createElement('tr');
+      // Highlight "closed" mentions in other sources notes
+      const notesHtml = r.otherSources
+        ? esc(r.otherSources).replace(/found closed:/g, '<span style="color:#c5221f;font-weight:600">closed:</span>')
+        : '<span style="color:#ccc">—</span>';
+
       tr.innerHTML = `
         <td>${r.index}</td>
         <td style="font-size:.8rem;color:#888;">${esc(r.label)}</td>
@@ -589,12 +761,14 @@
         <td><strong>${esc(r.foundName)}</strong></td>
         <td style="font-size:.8rem;color:#666;">${esc(r.foundAddress)}</td>
         <td><span class="types-tag">${esc(r.category)}</span></td>
+        <td>${sourceBadge(r.source)}</td>
         <td>${badgeHTML(r.status)}</td>
+        <td style="font-size:.78rem;color:#555;">${notesHtml}</td>
         <td>${r.mapsUrl ? `<a class="place-link" href="${r.mapsUrl}" target="_blank">View ↗</a>` : ''}</td>
       `;
       tbody.appendChild(tr);
 
-      await sleep(150);
+      await sleep(200);
     }
 
     bar.style.width = '100%';
@@ -615,9 +789,9 @@
 
   // ── Export ──────────────────────────────────────────────────────────────────
   function exportCSV() {
-    const headers = ['#', 'Label', 'Input Address', 'Found Name', 'Found Address', 'Category', 'Status', 'Maps Link'];
+    const headers = ['#', 'Label', 'Input Address', 'Found Name', 'Found Address', 'Category', 'Source', 'Status', 'Other Sources', 'Maps Link'];
     const rows = allResults.map(r => [
-      r.index, r.label, r.inputAddress, r.foundName, r.foundAddress, r.category, r.status, r.mapsUrl
+      r.index, r.label, r.inputAddress, r.foundName, r.foundAddress, r.category, r.source, r.status, r.otherSources, r.mapsUrl
     ]);
     const csv = [headers, ...rows].map(r =>
       r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')
