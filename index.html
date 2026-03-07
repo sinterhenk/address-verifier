@@ -344,7 +344,7 @@
   function parseCSV(text) {
     const clean = text.replace(/^\uFEFF/, '');   // strip Excel BOM
     const lines = clean.trim().split(/\r?\n/);
-    const sep = lines[0].includes('\t') ? '\t' : ',';
+    const sep = lines[0].includes('\t') ? '\t' : lines[0].includes(';') ? ';' : ',';
     const headers = splitLine(lines[0], sep).map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/^_+|_+$/g, ''));
     return lines.slice(1).filter(l => l.trim()).map(line => {
       const vals = splitLine(line, sep);
@@ -399,7 +399,7 @@
       const text = e.target.result;
       const clean = text.replace(/^\uFEFF/, '');
       const lines = clean.trim().split(/\r?\n/);
-      const sep = lines[0].includes('\t') ? '\t' : ',';
+      const sep = lines[0].includes('\t') ? '\t' : lines[0].includes(';') ? ';' : ',';
       const rawHeaders = lines[0].split(sep).map(h => h.trim());
       const normHeaders = rawHeaders.map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/^_+|_+$/g, ''));
       parsedRows = parseCSV(text);
