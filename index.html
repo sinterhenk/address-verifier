@@ -544,10 +544,6 @@
             const nearby = await nearbySearch(bizName, geo.lat, geo.lon, apiKey, 300);
             if (nearby.results?.length > 0) {
               place = nearby.results[0];
-            } else {
-              // Widen to 1km if nothing close
-              const wide = await nearbySearch(bizName, geo.lat, geo.lon, apiKey, 1000);
-              place = wide.results?.[0] || null;
             }
             // If still nothing, fall back to geocode result to at least show the address
             if (!place) {
