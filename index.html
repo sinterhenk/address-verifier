@@ -664,9 +664,10 @@
           r.status       = 'info';
         } else {
           // Step 2: TomTom + OSM in parallel
+          let osmError = null;
           const [ttCandidates, osmCandidates] = await Promise.all([
             ttNearby(bizName, geo.lat, geo.lon, ttKey, 500).catch(() => []),
-            osmNearby(bizName, geo.lat, geo.lon, 600).catch(() => []),
+            osmNearby(bizName, geo.lat, geo.lon, 600).catch(e => { osmError = e.message; return []; }),
           ]);
           const candidates = [...ttCandidates, ...osmCandidates];
 
@@ -694,6 +695,7 @@
             const note = sourceSummaryText(cands, bizName);
             if (note) notes.push(`${src}: ${note}`);
           }
+          if (osmError) notes.push(`OSM: error — ${osmError}`);
           r.otherSources = notes.join(' · ');
         }
       } catch(err) {
