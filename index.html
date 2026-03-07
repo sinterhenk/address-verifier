@@ -438,9 +438,9 @@
     }
   }
 
-  // Step 1: geocode an address → {lat, lon, freeformAddress}
+  // Step 1: resolve address to coordinates using fuzzy search
   async function geocode(address, apiKey) {
-    const url = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(address)}.json?key=${apiKey}&limit=1`;
+    const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(address)}.json?key=${apiKey}&limit=1&typeahead=false`;
     const data = await ttFetch(url);
     const r = data.results?.[0];
     if (!r) return null;
