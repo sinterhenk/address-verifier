@@ -509,7 +509,12 @@
   }
 
   // ── OpenStreetMap Overpass helper ────────────────────────────────────────────
+  let lastOsmCall = 0;
   async function osmNearby(bizName, lat, lon, radius = 600) {
+    const minGap = 1500; // Overpass rate limit: at least 1.5s between requests
+    const wait = minGap - (Date.now() - lastOsmCall);
+    if (wait > 0) await sleep(wait);
+    lastOsmCall = Date.now();
     // Escape special regex chars in name for Overpass
     const escapedName = bizName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const q = `[out:json][timeout:12];(node["name"~"${escapedName}",i](around:${radius},${lat},${lon});way["name"~"${escapedName}",i](around:${radius},${lat},${lon}););out center 5;`;
