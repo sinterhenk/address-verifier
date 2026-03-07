@@ -511,18 +511,24 @@
   // ── OpenStreetMap Overpass helper ────────────────────────────────────────────
   let lastOsmCall = 0;
   async function osmNearby(bizName, lat, lon, radius = 600) {
-    const minGap = 1500; // Overpass rate limit: at least 1.5s between requests
+    const minGap = 3000; // Overpass rate limit: 1 request per 3s
     const wait = minGap - (Date.now() - lastOsmCall);
     if (wait > 0) await sleep(wait);
     lastOsmCall = Date.now();
-    // Escape special regex chars in name for Overpass
     const escapedName = bizName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const q = `[out:json][timeout:12];(node["name"~"${escapedName}",i](around:${radius},${lat},${lon});way["name"~"${escapedName}",i](around:${radius},${lat},${lon}););out center 5;`;
-    const data = await apiFetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'data=' + encodeURIComponent(q),
-    }, 20000);
+    const q = `[out:json][timeout:25];(node["name"~"${escapedName}",i](around:${radius},${lat},${lon});way["name"~"${escapedName}",i](around:${radius},${lat},${lon}););out center 5;`;
+    const body = 'data=' + encodeURIComponent(q);
+    const opts = { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body };
+    let data;
+    try {
+      data = await apiFetch('https://overpass-api.de/api/interpreter', opts, 30000);
+    } catch(e) {
+      if (e.message.includes('429') || e.message.includes('504')) {
+        await sleep(5000); // back off and retry once
+        lastOsmCall = Date.now();
+        data = await apiFetch('https://overpass-api.de/api/interpreter', opts, 30000);
+      } else { throw e; }
+    }
     return (data.elements || []).map(el => {
       const tags = el.tags || {};
       const elLat = el.lat ?? el.center?.lat;
