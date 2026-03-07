@@ -429,7 +429,11 @@
       clearTimeout(tid);
       if (res.status === 403) throw new Error('Invalid API key (403)');
       if (res.status === 429) throw new Error('Rate limit hit (429)');
-      if (!res.ok) throw new Error(`HTTP ${res.status} — query: "${trimmed.substring(0,60)}"`);
+      if (!res.ok) {
+        let body = '';
+        try { body = await res.text(); } catch(_) {}
+        throw new Error(`HTTP ${res.status} — ${body.substring(0, 120)}`);
+      }
       return res.json();
     } catch(e) {
       clearTimeout(tid);
