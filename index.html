@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Address Verifier — Google Maps</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a73e8;
+      color: white;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    header svg { flex-shrink: 0; }
+    header h1 { font-size: 1.3rem; font-weight: 600; }
+    header p  { font-size: .85rem; opacity: .85; }
+
+    main { max-width: 960px; margin: 32px auto; padding: 0 16px; }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.08);
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .step-num {
+      background: #1a73e8;
+      color: white;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .78rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    label { font-size: .88rem; font-weight: 500; display: block; margin-bottom: 6px; color: #444; }
+
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: .92rem;
+      transition: border-color .2s;
+      outline: none;
+    }
+    input[type="text"]:focus, input[type="password"]:focus {
+      border-color: #1a73e8;
+    }
+
+    .row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .col { flex: 1; min-width: 200px; }
+
+    .upload-zone {
+      border: 2px dashed #d1d5db;
+      border-radius: 10px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: #1a73e8;
+      background: #f0f6ff;
+    }
+    .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+    .upload-zone svg { margin-bottom: 10px; }
+    .upload-zone p { font-size: .9rem; color: #666; }
+    .upload-zone strong { color: #1a73e8; }
+    #file-name { font-size: .82rem; color: #1a73e8; margin-top: 8px; font-weight: 500; }
+
+    .hint {
+      background: #f8f9ff;
+      border-left: 3px solid #1a73e8;
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      font-size: .82rem;
+      color: #555;
+      margin-top: 12px;
+    }
+    .hint code {
+      background: #e8eeff;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: .85em;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 22px;
+      border: none;
+      border-radius: 8px;
+      font-size: .92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: filter .15s, opacity .15s;
+    }
+    .btn:hover { filter: brightness(1.08); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+    .btn-primary { background: #1a73e8; color: white; }
+    .btn-secondary { background: #f0f2f5; color: #333; }
+    .btn-green { background: #34a853; color: white; }
+
+    #progress-section { display: none; }
+    .progress-bar-wrap {
+      background: #e8eaed;
+      border-radius: 99px;
+      height: 8px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #1a73e8;
+      border-radius: 99px;
+      transition: width .3s;
+      width: 0%;
+    }
+    #progress-text { font-size: .85rem; color: #666; }
+
+    #results-section { display: none; }
+
+    .summary-chips {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .chip {
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: .83rem;
+      font-weight: 600;
+    }
+    .chip-total   { background: #e8eaed; color: #333; }
+    .chip-match   { background: #e6f4ea; color: #137333; }
+    .chip-partial { background: #fef7e0; color: #b06000; }
+    .chip-miss    { background: #fce8e6; color: #c5221f; }
+    .chip-error   { background: #f3e8ff; color: #7c3aed; }
+
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .85rem;
+    }
+    th {
+      background: #f8f9fa;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      color: #555;
+      border-bottom: 2px solid #e8eaed;
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f0f2f5;
+      vertical-align: top;
+    }
+    tr:hover td { background: #fafbff; }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: .78rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge-match   { background: #e6f4ea; color: #137333; }
+    .badge-partial { background: #fef7e0; color: #b06000; }
+    .badge-miss    { background: #fce8e6; color: #c5221f; }
+    .badge-error   { background: #f3e8ff; color: #7c3aed; }
+
+    .place-link {
+      color: #1a73e8;
+      text-decoration: none;
+      font-size: .82rem;
+    }
+    .place-link:hover { text-decoration: underline; }
+
+    .types-tag {
+      display: inline-block;
+      background: #f0f2f5;
+      color: #555;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: .75rem;
+      margin: 1px;
+    }
+
+    #map { display: none; }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+
+    @media (max-width: 600px) {
+      header { padding: 14px 16px; }
+      main { margin: 16px auto; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="white" opacity=".9"/>
+    <circle cx="12" cy="9" r="2.5" fill="#1a73e8"/>
+  </svg>
+  <div>
+    <h1>Address Verifier</h1>
+    <p>Check what Google Maps says is actually located at your addresses</p>
+  </div>
+</header>
+
+<main>
+  <!-- Step 1: API Key -->
+  <div class="card">
+    <h2><span class="step-num">1</span> Google Maps API Key</h2>
+    <label for="api-key">API Key (requires Places API enabled)</label>
+    <input type="password" id="api-key" placeholder="AIza..." autocomplete="off" />
+    <div class="hint">
+      Get a key at <strong>console.cloud.google.com</strong> → enable <strong>Maps JavaScript API</strong> &amp; <strong>Places API</strong>.
+      Your key stays in your browser and is never sent anywhere except Google.
+    </div>
+  </div>
+
+  <!-- Step 2: Business name filter -->
+  <div class="card">
+    <h2><span class="step-num">2</span> Business Name to Verify (optional)</h2>
+    <div class="row">
+      <div class="col">
+        <label for="biz-name">Expected business name</label>
+        <input type="text" id="biz-name" placeholder="e.g. Shoe Carnival" />
+      </div>
+      <div class="col">
+        <label for="match-threshold">Match sensitivity</label>
+        <input type="text" id="match-threshold" value="0.5" placeholder="0.0 – 1.0" />
+      </div>
+    </div>
+    <div class="hint">
+      If provided, results will be marked <strong>Match</strong> / <strong>Partial</strong> / <strong>Not found</strong>
+      based on whether the name found on Google Maps contains the expected name.
+      Leave blank to simply see what's at each address.
+    </div>
+  </div>
+
+  <!-- Step 3: Upload CSV -->
+  <div class="card">
+    <h2><span class="step-num">3</span> Upload Addresses (CSV)</h2>
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="csv-input" accept=".csv,.tsv,.txt" />
+      <svg width="40" height="40" fill="none" viewBox="0 0 24 24">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="#aaa" stroke-width="1.5"/>
+        <polyline points="14,2 14,8 20,8" stroke="#aaa" stroke-width="1.5"/>
+        <line x1="12" y1="18" x2="12" y2="12" stroke="#1a73e8" stroke-width="1.5"/>
+        <polyline points="9,15 12,12 15,15" stroke="#1a73e8" stroke-width="1.5"/>
+      </svg>
+      <p><strong>Click to browse</strong> or drag &amp; drop a CSV file</p>
+      <div id="file-name"></div>
+    </div>
+    <div class="hint">
+      Accepted columns (any order, case-insensitive):<br/>
+      &bull; Single address column: <code>address</code> or <code>full_address</code><br/>
+      &bull; Split columns: <code>street</code>, <code>city</code>, <code>state</code>, <code>zip</code> / <code>postal_code</code><br/>
+      &bull; Optional label: <code>name</code>, <code>id</code>, <code>store_id</code><br/>
+      First row must be a header row. Comma or tab separated.
+    </div>
+  </div>
+
+  <!-- Run -->
+  <div class="card">
+    <h2><span class="step-num">4</span> Run Check</h2>
+    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+      <button class="btn btn-primary" id="run-btn" onclick="runCheck()">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8" stroke="white" stroke-width="2"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="white" stroke-width="2"/>
+        </svg>
+        Check Addresses
+      </button>
+      <span id="rate-note" style="font-size:.82rem;color:#666;">
+        Google Places API: ~2 requests/address. Free tier: 5,000 req/month.
+      </span>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="card" id="progress-section">
+    <h2>Processing…</h2>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+    <p id="progress-text">Starting…</p>
+  </div>
+
+  <!-- Results -->
+  <div class="card" id="results-section">
+    <h2>Results</h2>
+    <div class="summary-chips" id="summary-chips"></div>
+    <div class="actions">
+      <button class="btn btn-green" onclick="exportCSV()">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="white" stroke-width="2"/>
+          <polyline points="7,10 12,15 17,10" stroke="white" stroke-width="2"/>
+          <line x1="12" y1="15" x2="12" y2="3" stroke="white" stroke-width="2"/>
+        </svg>
+        Export CSV
+      </button>
+      <button class="btn btn-secondary" onclick="clearResults()">Clear</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Label / ID</th>
+            <th>Input Address</th>
+            <th>Found Name</th>
+            <th>Found Address</th>
+            <th>Types</th>
+            <th>Rating</th>
+            <th>Status</th>
+            <th>Maps Link</th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- Hidden map for Places API -->
+<div id="map"></div>
+
+<script>
+  // ── CSV parser ──────────────────────────────────────────────────────────────
+  function parseCSV(text) {
+    const lines = text.trim().split(/\r?\n/);
+    const sep = lines[0].includes('\t') ? '\t' : ',';
+    const headers = splitLine(lines[0], sep).map(h => h.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_'));
+    return lines.slice(1).filter(l => l.trim()).map(line => {
+      const vals = splitLine(line, sep);
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = (vals[i] || '').trim());
+      return obj;
+    });
+  }
+
+  function splitLine(line, sep) {
+    const result = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; continue; }
+      if (c === sep && !inQ) { result.push(cur); cur = ''; continue; }
+      cur += c;
+    }
+    result.push(cur);
+    return result;
+  }
+
+  function rowToAddress(row) {
+    // Try full address first
+    for (const key of ['address', 'full_address', 'formatted_address']) {
+      if (row[key]) return row[key];
+    }
+    // Build from parts
+    const parts = [];
+    for (const k of ['street', 'street_address', 'address1', 'addr']) if (row[k]) { parts.push(row[k]); break; }
+    for (const k of ['city']) if (row[k]) { parts.push(row[k]); break; }
+    for (const k of ['state', 'province', 'region']) if (row[k]) { parts.push(row[k]); break; }
+    for (const k of ['zip', 'postal_code', 'zipcode', 'zip_code']) if (row[k]) { parts.push(row[k]); break; }
+    for (const k of ['country']) if (row[k]) { parts.push(row[k]); break; }
+    return parts.join(', ');
+  }
+
+  function rowLabel(row, index) {
+    for (const k of ['name', 'id', 'store_id', 'store_number', 'label']) {
+      if (row[k]) return row[k];
+    }
+    return `#${index + 1}`;
+  }
+
+  // ── File upload ─────────────────────────────────────────────────────────────
+  let parsedRows = [];
+
+  document.getElementById('csv-input').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+    document.getElementById('file-name').textContent = `✓ ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    const reader = new FileReader();
+    reader.onload = e => {
+      parsedRows = parseCSV(e.target.result);
+      document.getElementById('file-name').textContent += ` — ${parsedRows.length} rows`;
+    };
+    reader.readAsText(file);
+  });
+
+  // Drag and drop
+  const zone = document.getElementById('upload-zone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    document.getElementById('file-name').textContent = `✓ ${file.name}`;
+    const input = document.getElementById('csv-input');
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change'));
+  });
+
+  // ── Google Maps loader ──────────────────────────────────────────────────────
+  let mapsLoaded = false;
+  let placesService = null;
+  let geocoder = null;
+
+  function loadMaps(apiKey) {
+    return new Promise((resolve, reject) => {
+      if (mapsLoaded) { resolve(); return; }
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=_mapsReady`;
+      script.onerror = () => reject(new Error('Failed to load Google Maps. Check your API key.'));
+      window._mapsReady = () => {
+        mapsLoaded = true;
+        const mapEl = document.getElementById('map');
+        const map = new google.maps.Map(mapEl, { center: {lat: 0, lng: 0}, zoom: 2 });
+        placesService = new google.maps.places.PlacesService(map);
+        geocoder = new google.maps.Geocoder();
+        resolve();
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  // ── Places lookup ───────────────────────────────────────────────────────────
+  function textSearch(query) {
+    return new Promise((resolve) => {
+      placesService.textSearch({ query }, (results, status) => {
+        resolve({ results: results || [], status });
+      });
+    });
+  }
+
+  function geocodeAddress(address) {
+    return new Promise((resolve) => {
+      geocoder.geocode({ address }, (results, status) => {
+        resolve({ results: results || [], status });
+      });
+    });
+  }
+
+  // ── Scoring ─────────────────────────────────────────────────────────────────
+  function scoreName(found, expected) {
+    if (!expected) return null;
+    const f = found.toLowerCase();
+    const e = expected.toLowerCase();
+    if (f.includes(e) || e.includes(f)) return 1.0;
+    // word overlap
+    const fw = new Set(f.split(/\W+/).filter(Boolean));
+    const ew = e.split(/\W+/).filter(Boolean);
+    const hits = ew.filter(w => fw.has(w)).length;
+    return hits / ew.length;
+  }
+
+  function statusFromScore(score) {
+    if (score === null) return 'info';
+    if (score >= 0.8) return 'match';
+    if (score >= 0.3) return 'partial';
+    return 'miss';
+  }
+
+  function badgeHTML(status, foundName, expected) {
+    if (status === 'match')   return `<span class="status-badge badge-match">✓ Match</span>`;
+    if (status === 'partial') return `<span class="status-badge badge-partial">~ Partial</span>`;
+    if (status === 'miss')    return `<span class="status-badge badge-miss">✗ Not found</span>`;
+    if (status === 'error')   return `<span class="status-badge badge-error">⚠ Error</span>`;
+    return `<span class="status-badge" style="background:#e8eaed;color:#333;">— Info</span>`;
+  }
+
+  // ── Main runner ─────────────────────────────────────────────────────────────
+  let allResults = [];
+
+  async function runCheck() {
+    const apiKey = document.getElementById('api-key').value.trim();
+    const bizName = document.getElementById('biz-name').value.trim();
+
+    if (!apiKey) { alert('Please enter your Google Maps API key.'); return; }
+    if (!parsedRows.length) { alert('Please upload a CSV file first.'); return; }
+
+    document.getElementById('run-btn').disabled = true;
+    document.getElementById('progress-section').style.display = '';
+    document.getElementById('results-section').style.display = 'none';
+    document.getElementById('results-body').innerHTML = '';
+    allResults = [];
+
+    try {
+      await loadMaps(apiKey);
+    } catch(e) {
+      alert(e.message);
+      document.getElementById('run-btn').disabled = false;
+      document.getElementById('progress-section').style.display = 'none';
+      return;
+    }
+
+    const total = parsedRows.length;
+    const bar  = document.getElementById('progress-bar');
+    const txt  = document.getElementById('progress-text');
+    const tbody = document.getElementById('results-body');
+    const threshold = parseFloat(document.getElementById('match-threshold').value) || 0.5;
+
+    let counts = { match: 0, partial: 0, miss: 0, error: 0, info: 0 };
+
+    for (let i = 0; i < total; i++) {
+      const row = parsedRows[i];
+      const address = rowToAddress(row);
+      const label   = rowLabel(row, i);
+
+      bar.style.width = `${Math.round((i / total) * 100)}%`;
+      txt.textContent = `${i + 1} / ${total}  —  ${address}`;
+
+      let resultRow = {
+        index: i + 1,
+        label,
+        inputAddress: address,
+        foundName: '',
+        foundAddress: '',
+        types: '',
+        rating: '',
+        status: 'error',
+        mapsUrl: '',
+        score: null,
+      };
+
+      try {
+        // Build query: if bizName provided, search "<bizName> <address>", else just address
+        const query = bizName ? `${bizName} ${address}` : address;
+        const { results, status } = await textSearch(query);
+
+        if (status === 'OK' && results.length > 0) {
+          const place = results[0];
+          resultRow.foundName    = place.name || '';
+          resultRow.foundAddress = place.formatted_address || '';
+          resultRow.types        = (place.types || []).filter(t => t !== 'point_of_interest' && t !== 'establishment').slice(0, 3).join(', ');
+          resultRow.rating       = place.rating ? `${place.rating} ★` : '';
+          resultRow.mapsUrl      = `https://www.google.com/maps/place/?q=place_id:${place.place_id}`;
+
+          const score = scoreName(place.name, bizName);
+          resultRow.score = score;
+          if (score === null) {
+            resultRow.status = 'info';
+          } else {
+            resultRow.status = score >= threshold ? (score >= 0.8 ? 'match' : 'partial') : 'miss';
+          }
+        } else if (status === 'ZERO_RESULTS') {
+          resultRow.foundName = '(no results)';
+          resultRow.status = bizName ? 'miss' : 'info';
+        } else {
+          resultRow.foundName = `API: ${status}`;
+          resultRow.status = 'error';
+        }
+      } catch(err) {
+        resultRow.foundName = `Error: ${err.message}`;
+        resultRow.status = 'error';
+      }
+
+      counts[resultRow.status] = (counts[resultRow.status] || 0) + 1;
+      allResults.push(resultRow);
+
+      // Append row immediately
+      const tr = document.createElement('tr');
+      const typesTags = resultRow.types.split(', ').filter(Boolean).map(t =>
+        `<span class="types-tag">${t.replace(/_/g,' ')}</span>`).join('');
+      tr.innerHTML = `
+        <td>${resultRow.index}</td>
+        <td style="font-size:.8rem;color:#888;">${esc(resultRow.label)}</td>
+        <td>${esc(resultRow.inputAddress)}</td>
+        <td><strong>${esc(resultRow.foundName)}</strong></td>
+        <td style="font-size:.8rem;color:#666;">${esc(resultRow.foundAddress)}</td>
+        <td>${typesTags}</td>
+        <td style="text-align:center;">${esc(resultRow.rating)}</td>
+        <td>${badgeHTML(resultRow.status)}</td>
+        <td>${resultRow.mapsUrl ? `<a class="place-link" href="${resultRow.mapsUrl}" target="_blank">View ↗</a>` : ''}</td>
+      `;
+      tbody.appendChild(tr);
+
+      // Small delay to avoid hammering API too fast
+      await sleep(200);
+    }
+
+    bar.style.width = '100%';
+    txt.textContent = `Done — ${total} addresses checked.`;
+
+    // Summary chips
+    const chips = document.getElementById('summary-chips');
+    chips.innerHTML = `
+      <span class="chip chip-total">${total} Total</span>
+      ${counts.match   ? `<span class="chip chip-match">✓ ${counts.match} Match</span>` : ''}
+      ${counts.partial ? `<span class="chip chip-partial">~ ${counts.partial} Partial</span>` : ''}
+      ${counts.miss    ? `<span class="chip chip-miss">✗ ${counts.miss} Not found</span>` : ''}
+      ${counts.info    ? `<span class="chip chip-total">${counts.info} Info</span>` : ''}
+      ${counts.error   ? `<span class="chip chip-error">⚠ ${counts.error} Error</span>` : ''}
+    `;
+
+    document.getElementById('results-section').style.display = '';
+    document.getElementById('run-btn').disabled = false;
+  }
+
+  // ── Export ──────────────────────────────────────────────────────────────────
+  function exportCSV() {
+    const headers = ['#', 'Label', 'Input Address', 'Found Name', 'Found Address', 'Types', 'Rating', 'Status', 'Maps URL'];
+    const rows = allResults.map(r => [
+      r.index, r.label, r.inputAddress, r.foundName, r.foundAddress, r.types, r.rating, r.status, r.mapsUrl
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'address-check-results.csv';
+    a.click();
+  }
+
+  function clearResults() {
+    allResults = [];
+    document.getElementById('results-section').style.display = 'none';
+    document.getElementById('progress-section').style.display = 'none';
+    document.getElementById('results-body').innerHTML = '';
+  }
+
+  // ── Utils ───────────────────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
