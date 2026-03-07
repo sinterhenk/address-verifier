@@ -89,6 +89,7 @@
     }
     .pill-tt  { background: #e8f0fe; color: #1a73e8; }
     .pill-fsq { background: #fce8e6; color: #c5221f; }
+    .pill-here { background: #fff3e0; color: #e65100; }
     .pill-osm { background: #e6f4ea; color: #137333; }
 
     .upload-zone {
@@ -241,6 +242,7 @@
     }
     .src-tt  { background: #e8f0fe; color: #1a73e8; }
     .src-fsq { background: #fce8e6; color: #c5221f; }
+    .src-here { background: #fff3e0; color: #e65100; }
     .src-osm { background: #e6f4ea; color: #137333; }
     .src-none { background: #f0f2f5; color: #999; }
 
@@ -261,7 +263,7 @@
   </svg>
   <div>
     <h1>Address Verifier — Multi-Source</h1>
-    <p>TomTom · Foursquare · OpenStreetMap &nbsp;·&nbsp; <small>v5 · 2026-03-07</small></p>
+    <p>TomTom · HERE · Foursquare · OpenStreetMap &nbsp;·&nbsp; <small>v6 · 2026-03-07</small></p>
   </div>
 </header>
 
@@ -279,16 +281,20 @@
         <label for="fsq-key">Foursquare API Key <span style="color:#999;font-weight:400">(optional)</span></label>
         <input type="password" id="fsq-key" placeholder="Optional — foursquare.com/developers" autocomplete="off" />
       </div>
+      <div class="col">
+        <label for="here-key">HERE API Key <span style="color:#999;font-weight:400">(optional)</span></label>
+        <input type="password" id="here-key" placeholder="Optional — developer.here.com" autocomplete="off" />
+      </div>
     </div>
     <div class="source-pills" style="margin-top:14px;">
       <span class="source-pill pill-tt">TomTom — 2,500 req/day free · no card</span>
-      <span class="source-pill pill-fsq">Foursquare — 1,000 req/day free · no card</span>
+      <span class="source-pill pill-fsq">Foursquare — legacy accounts only</span>
+      <span class="source-pill pill-here">HERE — 1,000 req/day free · no card</span>
       <span class="source-pill pill-osm">OpenStreetMap — unlimited · no key needed</span>
     </div>
     <div class="hint" style="margin-top:12px;">
-      TomTom is used to geocode each address and search nearby POIs.
-      Foursquare and OpenStreetMap are used as fallbacks when TomTom doesn't find a confident match.
-      OSM is only queried when needed (to respect rate limits).
+      TomTom geocodes each address and searches nearby POIs. HERE and Foursquare run in parallel as additional sources.
+      OpenStreetMap is used as a fallback when no confident match is found.
     </div>
   </div>
 
@@ -533,6 +539,20 @@
     }));
   }
 
+  // ── HERE Discover helper ──────────────────────────────────────────────────────
+  async function hereNearby(bizName, lat, lon, hereKey, radius = 500) {
+    const url = `https://discover.search.hereapi.com/v1/discover?q=${encodeURIComponent(bizName)}&at=${lat},${lon}&limit=5&apiKey=${hereKey}`;
+    const data = await apiFetch(url);
+    return (data.items || []).map(p => ({
+      source: 'HERE',
+      name:    p.title || '',
+      address: p.address?.label || '',
+      category: p.categories?.[0]?.name || '',
+      lat:     p.position?.lat,
+      lon:     p.position?.lng,
+    }));
+  }
+
   // ── OpenStreetMap Overpass helper ────────────────────────────────────────────
   async function osmNearby(bizName, lat, lon, radius = 600) {
     // Escape special regex chars in name for Overpass
@@ -609,6 +629,7 @@
   function sourceBadge(src) {
     if (src === 'TomTom')     return `<span class="src-badge src-tt">TomTom</span>`;
     if (src === 'Foursquare') return `<span class="src-badge src-fsq">Foursquare</span>`;
+    if (src === 'HERE')       return `<span class="src-badge src-here">HERE</span>`;
     if (src === 'OSM')        return `<span class="src-badge src-osm">OSM</span>`;
     return `<span class="src-badge src-none">—</span>`;
   }
@@ -619,6 +640,7 @@
   async function runCheck() {
     const ttKey   = document.getElementById('tt-key').value.trim();
     const fsqKey  = document.getElementById('fsq-key').value.trim();
+    const hereKey = document.getElementById('here-key').value.trim();
     const bizName = document.getElementById('biz-name').value.trim();
 
     if (!ttKey)             { alert('Please enter your TomTom API key.'); return; }
@@ -685,15 +707,25 @@
           r.source       = 'TomTom';
           r.status       = 'info';
         } else {
-          // Step 2: TomTom nearby + Foursquare in parallel
-          const [ttSettled, fsqSettled] = await Promise.allSettled([
+          // Step 2: TomTom nearby + Foursquare + HERE in parallel
+          const [ttSettled, fsqSettled, hereSettled] = await Promise.allSettled([
             ttNearby(bizName, geo.lat, geo.lon, ttKey, 500),
-            fsqKey ? fsqNearby(bizName, geo.lat, geo.lon, fsqKey, 500) : Promise.resolve([]),
+            fsqKey  ? fsqNearby(bizName,  geo.lat, geo.lon, fsqKey,  500) : Promise.resolve([]),
+            hereKey ? hereNearby(bizName, geo.lat, geo.lon, hereKey, 500) : Promise.resolve([]),
           ]);
 
-          const ttCandidates  = ttSettled.status  === 'fulfilled' ? ttSettled.value  : [];
-          const fsqCandidates = fsqSettled.status === 'fulfilled' ? fsqSettled.value : [];
-          let candidates = [...ttCandidates, ...fsqCandidates];
+          const ttCandidates   = ttSettled.status   === 'fulfilled' ? ttSettled.value   : [];
+          const fsqCandidates  = fsqSettled.status  === 'fulfilled' ? fsqSettled.value  : [];
+          const hereCandidates = hereSettled.status === 'fulfilled' ? hereSettled.value : [];
+          if (fsqKey && fsqSettled.status === 'rejected') {
+            console.warn('Foursquare error:', fsqSettled.reason);
+            if (i === 0) alert(`Foursquare error (first row): ${fsqSettled.reason?.message || fsqSettled.reason}\n\nCheck the browser console for details.`);
+          }
+          if (hereKey && hereSettled.status === 'rejected') {
+            console.warn('HERE error:', hereSettled.reason);
+            if (i === 0) alert(`HERE error (first row): ${hereSettled.reason?.message || hereSettled.reason}\n\nCheck the browser console for details.`);
+          }
+          let candidates = [...ttCandidates, ...fsqCandidates, ...hereCandidates];
 
           let best = pickBest(candidates, bizName);
           let bestScore = best ? scoreName(best.name, bizName) : 0;
@@ -727,11 +759,12 @@
           }
 
           // Build "other sources" notes for non-winning sources
-          const sourceGroups = { TomTom: ttCandidates, Foursquare: fsqCandidates, OSM: osmCandidates };
+          const sourceGroups = { TomTom: ttCandidates, Foursquare: fsqCandidates, HERE: hereCandidates, OSM: osmCandidates };
           const notes = [];
           for (const [src, cands] of Object.entries(sourceGroups)) {
             if (src === r.source) continue; // skip the winner
-            if (!fsqKey && src === 'Foursquare') continue; // skip if not configured
+            if (!fsqKey  && src === 'Foursquare') continue; // skip if not configured
+            if (!hereKey && src === 'HERE')        continue; // skip if not configured
             if (osmCandidates.length === 0 && src === 'OSM' && bestScore >= 0.8) continue; // OSM not queried
             const note = sourceSummaryText(cands, bizName);
             if (note) notes.push(`${src}: ${note}`);
