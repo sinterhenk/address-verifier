@@ -669,16 +669,27 @@
           r.source       = 'TomTom';
           r.status       = 'info';
         } else {
-          // Step 2: TomTom + OSM in parallel
-          let osmError = null;
-          const [ttCandidates, osmCandidates] = await Promise.all([
-            ttNearby(bizName, geo.lat, geo.lon, ttKey, 500).catch(() => []),
-            osmNearby(bizName, geo.lat, geo.lon, 600).catch(e => { osmError = e.message; return []; }),
-          ]);
-          const candidates = [...ttCandidates, ...osmCandidates];
+          // Step 2: TomTom nearby search
+          const ttCandidates = await ttNearby(bizName, geo.lat, geo.lon, ttKey, 500).catch(() => []);
+          let candidates = [...ttCandidates];
 
-          const best = pickBest(candidates, bizName);
-          const bestScore = best ? scoreName(best.name, bizName) : 0;
+          let best = pickBest(candidates, bizName);
+          let bestScore = best ? scoreName(best.name, bizName) : 0;
+
+          // Step 3: OSM fallback when TomTom isn't confident
+          let osmCandidates = [];
+          if (bestScore < 0.8) {
+            txt.textContent = `${i + 1} / ${total}  —  ${address}  (trying OSM…)`;
+            try {
+              osmCandidates = await osmNearby(bizName, geo.lat, geo.lon, 600);
+              candidates.push(...osmCandidates);
+              const newBest = pickBest(candidates, bizName);
+              if (newBest && scoreName(newBest.name, bizName) > bestScore) {
+                best = newBest;
+                bestScore = scoreName(best.name, bizName);
+              }
+            } catch(_) {}
+          }
 
           if (best && best.name) {
             r.foundName    = best.name;
@@ -697,11 +708,11 @@
           const sourceGroups = { TomTom: ttCandidates, OSM: osmCandidates };
           const notes = [];
           for (const [src, cands] of Object.entries(sourceGroups)) {
-            if (src === r.source) continue; // skip the winner
+            if (src === r.source) continue;
+            if (osmCandidates.length === 0 && src === 'OSM') continue; // OSM not queried
             const note = sourceSummaryText(cands, bizName);
             if (note) notes.push(`${src}: ${note}`);
           }
-          if (osmError) notes.push(`OSM: error — ${osmError}`);
           r.otherSources = notes.join(' · ');
         }
       } catch(err) {
