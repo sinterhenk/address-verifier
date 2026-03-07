@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Address Verifier — Google Maps</title>
+  <title>Address Verifier — TomTom</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -15,7 +15,7 @@
     }
 
     header {
-      background: #1a73e8;
+      background: #df1b12;
       color: white;
       padding: 18px 32px;
       display: flex;
@@ -23,7 +23,6 @@
       gap: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,.2);
     }
-    header svg { flex-shrink: 0; }
     header h1 { font-size: 1.3rem; font-weight: 600; }
     header p  { font-size: .85rem; opacity: .85; }
 
@@ -45,7 +44,7 @@
       gap: 8px;
     }
     .step-num {
-      background: #1a73e8;
+      background: #df1b12;
       color: white;
       width: 24px; height: 24px;
       border-radius: 50%;
@@ -68,9 +67,7 @@
       transition: border-color .2s;
       outline: none;
     }
-    input[type="text"]:focus, input[type="password"]:focus {
-      border-color: #1a73e8;
-    }
+    input[type="text"]:focus, input[type="password"]:focus { border-color: #df1b12; }
 
     .row { display: flex; gap: 14px; flex-wrap: wrap; }
     .col { flex: 1; min-width: 200px; }
@@ -85,18 +82,17 @@
       position: relative;
     }
     .upload-zone:hover, .upload-zone.drag-over {
-      border-color: #1a73e8;
-      background: #f0f6ff;
+      border-color: #df1b12;
+      background: #fff5f5;
     }
     .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
-    .upload-zone svg { margin-bottom: 10px; }
     .upload-zone p { font-size: .9rem; color: #666; }
-    .upload-zone strong { color: #1a73e8; }
-    #file-name { font-size: .82rem; color: #1a73e8; margin-top: 8px; font-weight: 500; }
+    .upload-zone strong { color: #df1b12; }
+    #file-name { font-size: .82rem; color: #df1b12; margin-top: 8px; font-weight: 500; }
 
     .hint {
-      background: #f8f9ff;
-      border-left: 3px solid #1a73e8;
+      background: #fff5f5;
+      border-left: 3px solid #df1b12;
       padding: 10px 14px;
       border-radius: 0 6px 6px 0;
       font-size: .82rem;
@@ -104,7 +100,7 @@
       margin-top: 12px;
     }
     .hint code {
-      background: #e8eeff;
+      background: #ffe8e8;
       padding: 1px 5px;
       border-radius: 3px;
       font-family: monospace;
@@ -125,7 +121,7 @@
     }
     .btn:hover { filter: brightness(1.08); }
     .btn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
-    .btn-primary { background: #1a73e8; color: white; }
+    .btn-primary { background: #df1b12; color: white; }
     .btn-secondary { background: #f0f2f5; color: #333; }
     .btn-green { background: #34a853; color: white; }
 
@@ -139,7 +135,7 @@
     }
     .progress-bar {
       height: 100%;
-      background: #1a73e8;
+      background: #df1b12;
       border-radius: 99px;
       transition: width .3s;
       width: 0%;
@@ -186,7 +182,8 @@
       border-bottom: 1px solid #f0f2f5;
       vertical-align: top;
     }
-    tr:hover td { background: #fafbff; }
+    tr:hover td { background: #fffafa; }
+
     .status-badge {
       display: inline-flex;
       align-items: center;
@@ -202,11 +199,7 @@
     .badge-miss    { background: #fce8e6; color: #c5221f; }
     .badge-error   { background: #f3e8ff; color: #7c3aed; }
 
-    .place-link {
-      color: #1a73e8;
-      text-decoration: none;
-      font-size: .82rem;
-    }
+    .place-link { color: #df1b12; text-decoration: none; font-size: .82rem; }
     .place-link:hover { text-decoration: underline; }
 
     .types-tag {
@@ -218,8 +211,6 @@
       font-size: .75rem;
       margin: 1px;
     }
-
-    #map { display: none; }
 
     .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
 
@@ -234,43 +225,36 @@
 <header>
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="white" opacity=".9"/>
-    <circle cx="12" cy="9" r="2.5" fill="#1a73e8"/>
+    <circle cx="12" cy="9" r="2.5" fill="#df1b12"/>
   </svg>
   <div>
-    <h1>Address Verifier</h1>
-    <p>Check what Google Maps says is actually located at your addresses</p>
+    <h1>Address Verifier — TomTom</h1>
+    <p>Check what is actually located at your addresses using TomTom Places</p>
   </div>
 </header>
 
 <main>
+
   <!-- Step 1: API Key -->
   <div class="card">
-    <h2><span class="step-num">1</span> Google Maps API Key</h2>
-    <label for="api-key">API Key (requires Places API enabled)</label>
-    <input type="password" id="api-key" placeholder="AIza..." autocomplete="off" />
+    <h2><span class="step-num">1</span> TomTom API Key</h2>
+    <label for="api-key">API Key</label>
+    <input type="password" id="api-key" placeholder="Paste your TomTom API key…" autocomplete="off" />
     <div class="hint">
-      Get a key at <strong>console.cloud.google.com</strong> → enable <strong>Maps JavaScript API</strong> &amp; <strong>Places API</strong>.
-      Your key stays in your browser and is never sent anywhere except Google.
+      Get a free key at <strong>developer.tomtom.com</strong> → Sign up → My Dashboard → Add new app.
+      Free tier: <strong>2,500 requests/day</strong>, no credit card required.
+      Your key stays in your browser only.
     </div>
   </div>
 
-  <!-- Step 2: Business name filter -->
+  <!-- Step 2: Business name -->
   <div class="card">
     <h2><span class="step-num">2</span> Business Name to Verify (optional)</h2>
-    <div class="row">
-      <div class="col">
-        <label for="biz-name">Expected business name</label>
-        <input type="text" id="biz-name" placeholder="e.g. Shoe Carnival" />
-      </div>
-      <div class="col">
-        <label for="match-threshold">Match sensitivity</label>
-        <input type="text" id="match-threshold" value="0.5" placeholder="0.0 – 1.0" />
-      </div>
-    </div>
+    <input type="text" id="biz-name" placeholder="e.g. Shoe Carnival" />
     <div class="hint">
-      If provided, results will be marked <strong>Match</strong> / <strong>Partial</strong> / <strong>Not found</strong>
-      based on whether the name found on Google Maps contains the expected name.
-      Leave blank to simply see what's at each address.
+      If provided, each result is marked <strong>Match</strong> / <strong>Partial</strong> / <strong>Not found</strong>
+      based on whether the name TomTom returns contains the expected business name.
+      Leave blank to simply see what is at each address.
     </div>
   </div>
 
@@ -282,8 +266,8 @@
       <svg width="40" height="40" fill="none" viewBox="0 0 24 24">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" stroke="#aaa" stroke-width="1.5"/>
         <polyline points="14,2 14,8 20,8" stroke="#aaa" stroke-width="1.5"/>
-        <line x1="12" y1="18" x2="12" y2="12" stroke="#1a73e8" stroke-width="1.5"/>
-        <polyline points="9,15 12,12 15,15" stroke="#1a73e8" stroke-width="1.5"/>
+        <line x1="12" y1="18" x2="12" y2="12" stroke="#df1b12" stroke-width="1.5"/>
+        <polyline points="9,15 12,12 15,15" stroke="#df1b12" stroke-width="1.5"/>
       </svg>
       <p><strong>Click to browse</strong> or drag &amp; drop a CSV file</p>
       <div id="file-name"></div>
@@ -297,7 +281,7 @@
     </div>
   </div>
 
-  <!-- Run -->
+  <!-- Step 4: Run -->
   <div class="card">
     <h2><span class="step-num">4</span> Run Check</h2>
     <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
@@ -308,9 +292,7 @@
         </svg>
         Check Addresses
       </button>
-      <span id="rate-note" style="font-size:.82rem;color:#666;">
-        Google Places API: ~2 requests/address. Free tier: 5,000 req/month.
-      </span>
+      <span style="font-size:.82rem;color:#666;">1 request per address · 2,500/day free</span>
     </div>
   </div>
 
@@ -345,8 +327,7 @@
             <th>Input Address</th>
             <th>Found Name</th>
             <th>Found Address</th>
-            <th>Types</th>
-            <th>Rating</th>
+            <th>Category</th>
             <th>Status</th>
             <th>Maps Link</th>
           </tr>
@@ -355,10 +336,8 @@
       </table>
     </div>
   </div>
-</main>
 
-<!-- Hidden map for Places API -->
-<div id="map"></div>
+</main>
 
 <script>
   // ── CSV parser ──────────────────────────────────────────────────────────────
@@ -388,11 +367,9 @@
   }
 
   function rowToAddress(row) {
-    // Try full address first
     for (const key of ['address', 'full_address', 'formatted_address']) {
       if (row[key]) return row[key];
     }
-    // Build from parts
     const parts = [];
     for (const k of ['street', 'street_address', 'address1', 'addr']) if (row[k]) { parts.push(row[k]); break; }
     for (const k of ['city']) if (row[k]) { parts.push(row[k]); break; }
@@ -424,7 +401,6 @@
     reader.readAsText(file);
   });
 
-  // Drag and drop
   const zone = document.getElementById('upload-zone');
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
   zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
@@ -433,7 +409,6 @@
     zone.classList.remove('drag-over');
     const file = e.dataTransfer.files[0];
     if (!file) return;
-    document.getElementById('file-name').textContent = `✓ ${file.name}`;
     const input = document.getElementById('csv-input');
     const dt = new DataTransfer();
     dt.items.add(file);
@@ -441,44 +416,13 @@
     input.dispatchEvent(new Event('change'));
   });
 
-  // ── Google Maps loader ──────────────────────────────────────────────────────
-  let mapsLoaded = false;
-  let placesService = null;
-  let geocoder = null;
-
-  function loadMaps(apiKey) {
-    return new Promise((resolve, reject) => {
-      if (mapsLoaded) { resolve(); return; }
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=_mapsReady`;
-      script.onerror = () => reject(new Error('Failed to load Google Maps. Check your API key.'));
-      window._mapsReady = () => {
-        mapsLoaded = true;
-        const mapEl = document.getElementById('map');
-        const map = new google.maps.Map(mapEl, { center: {lat: 0, lng: 0}, zoom: 2 });
-        placesService = new google.maps.places.PlacesService(map);
-        geocoder = new google.maps.Geocoder();
-        resolve();
-      };
-      document.head.appendChild(script);
-    });
-  }
-
-  // ── Places lookup ───────────────────────────────────────────────────────────
-  function textSearch(query) {
-    return new Promise((resolve) => {
-      placesService.textSearch({ query }, (results, status) => {
-        resolve({ results: results || [], status });
-      });
-    });
-  }
-
-  function geocodeAddress(address) {
-    return new Promise((resolve) => {
-      geocoder.geocode({ address }, (results, status) => {
-        resolve({ results: results || [], status });
-      });
-    });
+  // ── TomTom API ──────────────────────────────────────────────────────────────
+  async function tomtomSearch(query, apiKey) {
+    const encoded = encodeURIComponent(query);
+    const url = `https://api.tomtom.com/search/2/search/${encoded}.json?key=${apiKey}&limit=1&typeahead=false`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
   }
 
   // ── Scoring ─────────────────────────────────────────────────────────────────
@@ -487,21 +431,13 @@
     const f = found.toLowerCase();
     const e = expected.toLowerCase();
     if (f.includes(e) || e.includes(f)) return 1.0;
-    // word overlap
     const fw = new Set(f.split(/\W+/).filter(Boolean));
     const ew = e.split(/\W+/).filter(Boolean);
     const hits = ew.filter(w => fw.has(w)).length;
     return hits / ew.length;
   }
 
-  function statusFromScore(score) {
-    if (score === null) return 'info';
-    if (score >= 0.8) return 'match';
-    if (score >= 0.3) return 'partial';
-    return 'miss';
-  }
-
-  function badgeHTML(status, foundName, expected) {
+  function badgeHTML(status) {
     if (status === 'match')   return `<span class="status-badge badge-match">✓ Match</span>`;
     if (status === 'partial') return `<span class="status-badge badge-partial">~ Partial</span>`;
     if (status === 'miss')    return `<span class="status-badge badge-miss">✗ Not found</span>`;
@@ -513,10 +449,10 @@
   let allResults = [];
 
   async function runCheck() {
-    const apiKey = document.getElementById('api-key').value.trim();
+    const apiKey  = document.getElementById('api-key').value.trim();
     const bizName = document.getElementById('biz-name').value.trim();
 
-    if (!apiKey) { alert('Please enter your Google Maps API key.'); return; }
+    if (!apiKey)          { alert('Please enter your TomTom API key.'); return; }
     if (!parsedRows.length) { alert('Please upload a CSV file first.'); return; }
 
     document.getElementById('run-btn').disabled = true;
@@ -525,112 +461,86 @@
     document.getElementById('results-body').innerHTML = '';
     allResults = [];
 
-    try {
-      await loadMaps(apiKey);
-    } catch(e) {
-      alert(e.message);
-      document.getElementById('run-btn').disabled = false;
-      document.getElementById('progress-section').style.display = 'none';
-      return;
-    }
-
     const total = parsedRows.length;
-    const bar  = document.getElementById('progress-bar');
-    const txt  = document.getElementById('progress-text');
+    const bar   = document.getElementById('progress-bar');
+    const txt   = document.getElementById('progress-text');
     const tbody = document.getElementById('results-body');
-    const threshold = parseFloat(document.getElementById('match-threshold').value) || 0.5;
-
-    let counts = { match: 0, partial: 0, miss: 0, error: 0, info: 0 };
+    let counts  = { match: 0, partial: 0, miss: 0, error: 0, info: 0 };
 
     for (let i = 0; i < total; i++) {
-      const row = parsedRows[i];
+      const row     = parsedRows[i];
       const address = rowToAddress(row);
       const label   = rowLabel(row, i);
 
       bar.style.width = `${Math.round((i / total) * 100)}%`;
       txt.textContent = `${i + 1} / ${total}  —  ${address}`;
 
-      let resultRow = {
-        index: i + 1,
-        label,
-        inputAddress: address,
-        foundName: '',
-        foundAddress: '',
-        types: '',
-        rating: '',
-        status: 'error',
-        mapsUrl: '',
-        score: null,
+      let r = {
+        index: i + 1, label, inputAddress: address,
+        foundName: '', foundAddress: '', category: '',
+        status: 'error', mapsUrl: '',
       };
 
       try {
-        // Build query: if bizName provided, search "<bizName> <address>", else just address
         const query = bizName ? `${bizName} ${address}` : address;
-        const { results, status } = await textSearch(query);
+        const data  = await tomtomSearch(query, apiKey);
 
-        if (status === 'OK' && results.length > 0) {
-          const place = results[0];
-          resultRow.foundName    = place.name || '';
-          resultRow.foundAddress = place.formatted_address || '';
-          resultRow.types        = (place.types || []).filter(t => t !== 'point_of_interest' && t !== 'establishment').slice(0, 3).join(', ');
-          resultRow.rating       = place.rating ? `${place.rating} ★` : '';
-          resultRow.mapsUrl      = `https://www.google.com/maps/place/?q=place_id:${place.place_id}`;
+        if (data.results && data.results.length > 0) {
+          const place = data.results[0];
+          r.foundName    = place.poi ? place.poi.name : (place.address?.freeformAddress || '');
+          r.foundAddress = place.address?.freeformAddress || '';
+          r.category     = place.poi?.categories?.[0] || place.type || '';
 
-          const score = scoreName(place.name, bizName);
-          resultRow.score = score;
-          if (score === null) {
-            resultRow.status = 'info';
-          } else {
-            resultRow.status = score >= threshold ? (score >= 0.8 ? 'match' : 'partial') : 'miss';
+          const lat = place.position?.lat;
+          const lon = place.position?.lon;
+          if (lat && lon) {
+            r.mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
           }
-        } else if (status === 'ZERO_RESULTS') {
-          resultRow.foundName = '(no results)';
-          resultRow.status = bizName ? 'miss' : 'info';
+
+          const score = scoreName(r.foundName, bizName);
+          if (score === null) {
+            r.status = 'info';
+          } else {
+            r.status = score >= 0.8 ? 'match' : score >= 0.3 ? 'partial' : 'miss';
+          }
         } else {
-          resultRow.foundName = `API: ${status}`;
-          resultRow.status = 'error';
+          r.foundName = '(no results)';
+          r.status = bizName ? 'miss' : 'info';
         }
       } catch(err) {
-        resultRow.foundName = `Error: ${err.message}`;
-        resultRow.status = 'error';
+        r.foundName = `Error: ${err.message}`;
+        r.status = 'error';
       }
 
-      counts[resultRow.status] = (counts[resultRow.status] || 0) + 1;
-      allResults.push(resultRow);
+      counts[r.status] = (counts[r.status] || 0) + 1;
+      allResults.push(r);
 
-      // Append row immediately
       const tr = document.createElement('tr');
-      const typesTags = resultRow.types.split(', ').filter(Boolean).map(t =>
-        `<span class="types-tag">${t.replace(/_/g,' ')}</span>`).join('');
       tr.innerHTML = `
-        <td>${resultRow.index}</td>
-        <td style="font-size:.8rem;color:#888;">${esc(resultRow.label)}</td>
-        <td>${esc(resultRow.inputAddress)}</td>
-        <td><strong>${esc(resultRow.foundName)}</strong></td>
-        <td style="font-size:.8rem;color:#666;">${esc(resultRow.foundAddress)}</td>
-        <td>${typesTags}</td>
-        <td style="text-align:center;">${esc(resultRow.rating)}</td>
-        <td>${badgeHTML(resultRow.status)}</td>
-        <td>${resultRow.mapsUrl ? `<a class="place-link" href="${resultRow.mapsUrl}" target="_blank">View ↗</a>` : ''}</td>
+        <td>${r.index}</td>
+        <td style="font-size:.8rem;color:#888;">${esc(r.label)}</td>
+        <td>${esc(r.inputAddress)}</td>
+        <td><strong>${esc(r.foundName)}</strong></td>
+        <td style="font-size:.8rem;color:#666;">${esc(r.foundAddress)}</td>
+        <td><span class="types-tag">${esc(r.category)}</span></td>
+        <td>${badgeHTML(r.status)}</td>
+        <td>${r.mapsUrl ? `<a class="place-link" href="${r.mapsUrl}" target="_blank">View ↗</a>` : ''}</td>
       `;
       tbody.appendChild(tr);
 
-      // Small delay to avoid hammering API too fast
-      await sleep(200);
+      await sleep(150);
     }
 
     bar.style.width = '100%';
     txt.textContent = `Done — ${total} addresses checked.`;
 
-    // Summary chips
-    const chips = document.getElementById('summary-chips');
-    chips.innerHTML = `
+    document.getElementById('summary-chips').innerHTML = `
       <span class="chip chip-total">${total} Total</span>
-      ${counts.match   ? `<span class="chip chip-match">✓ ${counts.match} Match</span>` : ''}
-      ${counts.partial ? `<span class="chip chip-partial">~ ${counts.partial} Partial</span>` : ''}
-      ${counts.miss    ? `<span class="chip chip-miss">✗ ${counts.miss} Not found</span>` : ''}
-      ${counts.info    ? `<span class="chip chip-total">${counts.info} Info</span>` : ''}
-      ${counts.error   ? `<span class="chip chip-error">⚠ ${counts.error} Error</span>` : ''}
+      ${counts.match   ? `<span class="chip chip-match">✓ ${counts.match} Match</span>`        : ''}
+      ${counts.partial ? `<span class="chip chip-partial">~ ${counts.partial} Partial</span>`  : ''}
+      ${counts.miss    ? `<span class="chip chip-miss">✗ ${counts.miss} Not found</span>`      : ''}
+      ${counts.info    ? `<span class="chip chip-total">${counts.info} Info</span>`             : ''}
+      ${counts.error   ? `<span class="chip chip-error">⚠ ${counts.error} Error</span>`        : ''}
     `;
 
     document.getElementById('results-section').style.display = '';
@@ -639,11 +549,13 @@
 
   // ── Export ──────────────────────────────────────────────────────────────────
   function exportCSV() {
-    const headers = ['#', 'Label', 'Input Address', 'Found Name', 'Found Address', 'Types', 'Rating', 'Status', 'Maps URL'];
+    const headers = ['#', 'Label', 'Input Address', 'Found Name', 'Found Address', 'Category', 'Status', 'Maps Link'];
     const rows = allResults.map(r => [
-      r.index, r.label, r.inputAddress, r.foundName, r.foundAddress, r.types, r.rating, r.status, r.mapsUrl
+      r.index, r.label, r.inputAddress, r.foundName, r.foundAddress, r.category, r.status, r.mapsUrl
     ]);
-    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const csv = [headers, ...rows].map(r =>
+      r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')
+    ).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -658,7 +570,6 @@
     document.getElementById('results-body').innerHTML = '';
   }
 
-  // ── Utils ───────────────────────────────────────────────────────────────────
   function esc(s) {
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
