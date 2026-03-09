@@ -249,7 +249,7 @@ Private Sub ShowChartCreatorSimple()
         "  10 → lines at 5%, 10%, 15%... (5% steps)" & vbCrLf & _
         "  4  → lines at 12.5%, 25%, 37.5%, 50%" & vbCrLf & vbCrLf & _
         "Leave blank to let Excel decide automatically.", _
-        "Chart Creator - Step 10 of 10: Y-Axis Gridlines", "")
+        "Chart Creator - Step 10 of 11: Y-Axis Gridlines", "")
     If StrPtr(gridInput) = 0 Then Exit Sub
 
     Dim yAxisLines As Integer
@@ -260,9 +260,29 @@ Private Sub ShowChartCreatorSimple()
         yAxisLines = 0
     End If
 
+    ' 11. Legend columns
+    Dim legColInput As String
+    legColInput = InputBox( _
+        "How many legend entries per row?" & vbCrLf & vbCrLf & _
+        "Controls the legend grid layout:" & vbCrLf & _
+        "  2  →  4 entries = 2×2  |  5 entries = 2×3" & vbCrLf & _
+        "  3  →  4 entries = 3+1  |  5 entries = 3+2  |  6 entries = 3×2" & vbCrLf & _
+        "  4  →  4 entries = 1 row of 4" & vbCrLf & vbCrLf & _
+        "Leave blank to let Excel decide automatically.", _
+        "Chart Creator - Step 11 of 11: Legend Layout", "")
+    If StrPtr(legColInput) = 0 Then Exit Sub
+
+    Dim legendCols As Integer
+    If IsNumeric(Trim(legColInput)) And Trim(legColInput) <> "" Then
+        legendCols = CInt(Trim(legColInput))
+        If legendCols < 1 Then legendCols = 0
+    Else
+        legendCols = 0
+    End If
+
     CreateChart rng, chartType, chartTitle, True, placement, True, False, _
                 colorScheme, 480, 300, fontName, lineWeight, Trim(yFmtInput), _
-                plotByRows, yAxisLines
+                plotByRows, yAxisLines, legendCols
 
 End Sub
 
@@ -284,7 +304,8 @@ Public Sub CreateChart( _
     Optional lineWeight    As Double = 2, _
     Optional yAxisNumFmt   As String = "", _
     Optional plotByRows    As Boolean = False, _
-    Optional yAxisLines    As Integer = 0 _
+    Optional yAxisLines    As Integer = 0, _
+    Optional legendCols    As Integer = 0 _
 )
 
     Dim ws        As Worksheet
@@ -341,8 +362,9 @@ Public Sub CreateChart( _
         cht.Legend.Position = xlLegendPositionBottom
         With cht.Legend.Font
             .Name = fontName
-            .Size = 9
+            .Size = 12.1
         End With
+        If legendCols > 0 Then cht.Legend.ColumnCount = legendCols
     End If
 
     Dim s As Series
@@ -461,7 +483,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 .Format.Line.Visible = msoFalse
                 .MajorTickMark = xlNone: .MinorTickMark = xlNone
                 With .TickLabels.Font
-                    .Name = fontName: .Size = 12.1: .Color = GRAY_LABEL: .Bold = False
+                    .Name = fontName: .Size = 13.1: .Color = GRAY_LABEL: .Bold = False
                 End With
                 If .HasMajorGridlines Then .MajorGridlines.Format.Line.Visible = msoFalse
             End With
@@ -471,7 +493,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 .Format.Line.Visible = msoFalse
                 .MajorTickMark = xlNone: .MinorTickMark = xlNone
                 With .TickLabels.Font
-                    .Name = fontName: .Size = 12.1: .Color = GRAY_LABEL: .Bold = False
+                    .Name = fontName: .Size = 13.1: .Color = GRAY_LABEL: .Bold = False
                 End With
                 If yAxisNumFmt <> "" Then
                     .TickLabels.NumberFormat = yAxisNumFmt
@@ -489,12 +511,21 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 End If
             End With
 
-            ' Remove markers on line charts for clean Canva look
+            ' Style markers: none for plain Line, small filled circle for Line+Markers / Scatter
             If chartType = xlLine Or chartType = xlLineMarkers Or _
                chartType = xlXYScatterLines Then
                 Dim sLine As Series
                 For Each sLine In cht.SeriesCollection
-                    sLine.MarkerStyle = xlMarkerStyleNone
+                    If chartType = xlLine Then
+                        sLine.MarkerStyle = xlMarkerStyleNone
+                    Else
+                        Dim mClr As Long
+                        mClr = sLine.Format.Line.ForeColor.RGB
+                        sLine.MarkerStyle = xlMarkerStyleCircle
+                        sLine.MarkerSize = 5
+                        sLine.MarkerForegroundColor = mClr
+                        sLine.MarkerBackgroundColor = mClr
+                    End If
                 Next sLine
             End If
 
@@ -587,7 +618,14 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long, 
             If chartType = xlLine Or chartType = xlLineMarkers Or _
                chartType = xlXYScatterLines Then
                 s.Format.Line.Weight = lineWeight
-                If chartType = xlLine Then s.MarkerStyle = xlMarkerStyleNone
+                If chartType = xlLine Then
+                    s.MarkerStyle = xlMarkerStyleNone
+                ElseIf chartType = xlLineMarkers Or chartType = xlXYScatterLines Then
+                    s.MarkerStyle = xlMarkerStyleCircle
+                    s.MarkerSize = 5
+                    s.MarkerForegroundColor = clr
+                    s.MarkerBackgroundColor = clr
+                End If
             End If
             i = i + 1
         Next s
@@ -605,7 +643,7 @@ Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As
     With axCat
         .HasTitle = False
         .TickLabels.Font.Name = fontName
-        .TickLabels.Font.Size = 12.1
+        .TickLabels.Font.Size = 13.1
         .TickLabels.Font.Color = RGB(51, 51, 51)
         .AxisBetweenCategories = True
         If .HasMajorGridlines Then .MajorGridlines.Format.Line.Visible = msoFalse
@@ -614,7 +652,7 @@ Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As
     With axVal
         .HasTitle = False
         .TickLabels.Font.Name = fontName
-        .TickLabels.Font.Size = 12.1
+        .TickLabels.Font.Size = 13.1
         .TickLabels.Font.Color = RGB(51, 51, 51)
         If yAxisNumFmt <> "" Then
             .TickLabels.NumberFormat = yAxisNumFmt
