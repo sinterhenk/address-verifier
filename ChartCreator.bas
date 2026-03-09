@@ -503,7 +503,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 sp.HasDataLabels = True
                 With sp.DataLabels
                     .ShowPercentage = True: .ShowValue = False
-                    .NumberFormat = "0%"
+                    .NumberFormat = "0.0%"
                     .Font.Name = fontName: .Font.Size = 15.6: .Font.Color = RGB(80, 80, 80)
                     .Position = xlLabelPositionOutsideEnd
                 End With
@@ -516,7 +516,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 sd.HasDataLabels = True
                 With sd.DataLabels
                     .ShowPercentage = True: .ShowValue = False
-                    .NumberFormat = "0%"
+                    .NumberFormat = "0.0%"
                     .Font.Name = fontName: .Font.Size = 15.6
                     .Font.Color = RGB(255, 255, 255): .Font.Bold = False
                 End With
