@@ -173,10 +173,10 @@ Private Sub ShowChartCreatorSimple()
     Dim fontInput As String
     fontInput = InputBox( _
         "Enter the number of the font:" & vbCrLf & vbCrLf & _
-        "1  Calibri  (Excel default)" & vbCrLf & _
-        "2  Arial" & vbCrLf & _
-        "3  Segoe UI  (Windows UI font)" & vbCrLf & _
-        "4  Helvetica Neue" & vbCrLf & _
+        "1  Libre Baskerville  (Canva default - must be installed)" & vbCrLf & _
+        "2  Calibri  (Excel default)" & vbCrLf & _
+        "3  Arial" & vbCrLf & _
+        "4  Segoe UI" & vbCrLf & _
         "5  Georgia  (serif)" & vbCrLf & _
         "6  Trebuchet MS" & vbCrLf & _
         vbCrLf & "Or type any font name directly.", _
@@ -186,10 +186,10 @@ Private Sub ShowChartCreatorSimple()
 
     Dim fontName As String
     Select Case Trim(fontInput)
-        Case "1": fontName = "Calibri"
-        Case "2": fontName = "Arial"
-        Case "3": fontName = "Segoe UI"
-        Case "4": fontName = "Helvetica Neue"
+        Case "1": fontName = "Libre Baskerville"
+        Case "2": fontName = "Calibri"
+        Case "3": fontName = "Arial"
+        Case "4": fontName = "Segoe UI"
         Case "5": fontName = "Georgia"
         Case "6": fontName = "Trebuchet MS"
         Case Else: fontName = Trim(fontInput)
