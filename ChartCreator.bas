@@ -464,9 +464,9 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                     Next le
                     Dim nR As Integer
                     nR = Int((nS + legendCols - 1) / legendCols)
-                    ' Width: use measured entry width; fallback to chart proportion
+                    ' Width: measured entry width + 20pt padding per column to avoid clipping
                     If maxW > 0 Then
-                        .Width = maxW * legendCols
+                        .Width = (maxW + 20) * legendCols
                     Else
                         .Width = cht.ChartArea.Width * legendCols / nS
                     End If
