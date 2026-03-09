@@ -210,8 +210,22 @@ Private Sub ShowChartCreatorSimple()
     Dim lineWeight As Double
     lineWeight = CDbl(lwInput)
 
+    ' 8. Y-axis number format (optional)
+    Dim yFmtInput As String
+    yFmtInput = InputBox( _
+        "Y-axis number format (leave blank for auto):" & vbCrLf & vbCrLf & _
+        "Examples:" & vbCrLf & _
+        "  0%      → 10%  (whole, default for % data)" & vbCrLf & _
+        "  0.0%    → 10.1%" & vbCrLf & _
+        "  0.00%   → 10.12%" & vbCrLf & _
+        "  #,##0   → 1,234" & vbCrLf & _
+        "  #,##0.0 → 1,234.5" & vbCrLf & vbCrLf & _
+        "Leave blank to keep source data format (or use auto % rounding).", _
+        "Chart Creator - Step 8 of 8: Y-Axis Format", "")
+    If StrPtr(yFmtInput) = 0 Then Exit Sub
+
     CreateChart rng, chartType, chartTitle, True, placement, True, False, _
-                colorScheme, 480, 300, fontName, lineWeight
+                colorScheme, 480, 300, fontName, lineWeight, Trim(yFmtInput)
 
 End Sub
 
@@ -229,8 +243,9 @@ Public Sub CreateChart( _
     colorScheme As String, _
     chartW      As Double, _
     chartH      As Double, _
-    Optional fontName   As String = "Libre Baskerville", _
-    Optional lineWeight As Double = 2 _
+    Optional fontName      As String = "Libre Baskerville", _
+    Optional lineWeight    As Double = 2, _
+    Optional yAxisNumFmt   As String = "" _
 )
 
     Dim ws        As Worksheet
@@ -314,10 +329,10 @@ Public Sub CreateChart( _
     ApplyColorScheme cht, colorScheme, chartType, lineWeight
 
     If colorScheme = "Canva" Then
-        ApplyCanvaStyle cht, chartType, showLegend, fontName
+        ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt
     Else
         If chartType <> xlPie And chartType <> xlDoughnut And chartType <> xlRadar Then
-            FormatAxes cht, fontName
+            FormatAxes cht, fontName, yAxisNumFmt
         End If
     End If
 
@@ -331,9 +346,10 @@ End Sub
 ' ============================================================
 ' CANVA STYLE
 ' ============================================================
-Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boolean, fontName As String)
+Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boolean, fontName As String, _
+                            Optional yAxisNumFmt As String = "")
 
-    Const GRAY_LABEL  As Long = 8947848
+    Const GRAY_LABEL  As Long = 3355443   ' #333333
     Const GRAY_GRID   As Long = 14540253
     Const WHITE       As Long = 16777215
 
@@ -423,6 +439,11 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 With .TickLabels.Font
                     .Name = fontName: .Size = 12.1: .Color = GRAY_LABEL: .Bold = False
                 End With
+                If yAxisNumFmt <> "" Then
+                    .TickLabels.NumberFormat = yAxisNumFmt
+                ElseIf InStr(.TickLabels.NumberFormat, "%") > 0 Then
+                    .TickLabels.NumberFormat = "0%"
+                End If
                 If Not .MajorGridlines Is Nothing Then
                     With .MajorGridlines.Format.Line
                         .Visible = msoTrue: .ForeColor.RGB = GRAY_GRID
@@ -529,7 +550,7 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long, 
 End Sub
 
 ' ============================================================
-Private Sub FormatAxes(cht As Chart, fontName As String)
+Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As String = "")
     On Error Resume Next
     Dim axCat As Axis, axVal As Axis
     Set axCat = cht.Axes(xlCategory)
@@ -539,6 +560,7 @@ Private Sub FormatAxes(cht As Chart, fontName As String)
         .HasTitle = False
         .TickLabels.Font.Name = fontName
         .TickLabels.Font.Size = 12.1
+        .TickLabels.Font.Color = RGB(51, 51, 51)
         .AxisBetweenCategories = True
         If .HasMajorGridlines Then .MajorGridlines.Format.Line.Visible = msoFalse
     End With
@@ -547,7 +569,10 @@ Private Sub FormatAxes(cht As Chart, fontName As String)
         .HasTitle = False
         .TickLabels.Font.Name = fontName
         .TickLabels.Font.Size = 12.1
-        If InStr(.TickLabels.NumberFormat, "%") > 0 Then
+        .TickLabels.Font.Color = RGB(51, 51, 51)
+        If yAxisNumFmt <> "" Then
+            .TickLabels.NumberFormat = yAxisNumFmt
+        ElseIf InStr(.TickLabels.NumberFormat, "%") > 0 Then
             .TickLabels.NumberFormat = "0%"
         End If
         With .MajorGridlines.Format.Line
