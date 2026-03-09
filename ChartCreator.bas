@@ -386,26 +386,6 @@ Public Sub CreateChart( _
     cht.HasLegend = showLegend
     If showLegend Then
         cht.Legend.Position = xlLegendPositionBottom
-        With cht.Legend.Font
-            .Name = fontName
-            .Size = 12.1
-        End With
-        If legendCols > 0 Then
-            On Error Resume Next
-            Dim nSeries As Integer
-            nSeries = cht.SeriesCollection.Count
-            If nSeries > legendCols Then
-                Dim autoH As Double, autoW As Double
-                autoH = cht.Legend.Height
-                autoW = cht.Legend.Width
-                cht.Legend.Width = (autoW / nSeries) * legendCols
-                ' Expand height for the extra rows
-                Dim nRows As Integer
-                nRows = Int((nSeries + legendCols - 1) / legendCols)
-                cht.Legend.Height = autoH * nRows
-            End If
-            On Error GoTo 0
-        End If
     End If
 
     Dim s As Series
@@ -425,7 +405,7 @@ Public Sub CreateChart( _
     ApplyColorScheme cht, colorScheme, chartType, lineWeight
 
     If colorScheme = "Canva" Then
-        ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt
+        ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, legendCols
     Else
         If chartType <> xlPie And chartType <> xlDoughnut And chartType <> xlRadar Then
             FormatAxes cht, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt
@@ -445,7 +425,8 @@ End Sub
 Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boolean, fontName As String, _
                             Optional yAxisNumFmt As String = "", _
                             Optional yAxisLines As Integer = 0, _
-                            Optional xAxisNumFmt As String = "")
+                            Optional xAxisNumFmt As String = "", _
+                            Optional legendCols As Integer = 0)
 
     Const GRAY_LABEL  As Long = 3355443   ' #333333
     Const GRAY_GRID   As Long = 14540253
@@ -469,6 +450,23 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
             With .Font
                 .Name = fontName: .Size = 12.1: .Color = GRAY_LABEL: .Bold = False
             End With
+            ' Apply column layout now that font is finalised
+            If legendCols > 0 Then
+                Dim nS As Integer: nS = cht.SeriesCollection.Count
+                If nS > legendCols Then
+                    Dim le As LegendEntry, maxW As Double
+                    maxW = 0
+                    For Each le In .LegendEntries
+                        If le.Width > maxW Then maxW = le.Width
+                    Next le
+                    If maxW > 0 Then
+                        Dim nR As Integer
+                        nR = Int((nS + legendCols - 1) / legendCols)
+                        .Width = maxW * legendCols
+                        .Height = .Height * nR
+                    End If
+                End If
+            End If
         End With
     End If
 
