@@ -390,7 +390,18 @@ Public Sub CreateChart( _
             .Name = fontName
             .Size = 12.1
         End With
-        If legendCols > 0 Then cht.Legend.ColumnCount = legendCols
+        If legendCols > 0 Then
+            ' Force wrap by setting legend width = widest entry × desired columns
+            On Error Resume Next
+            Dim le As LegendEntry
+            Dim maxEntryW As Double
+            maxEntryW = 0
+            For Each le In cht.Legend.LegendEntries
+                If le.Width > maxEntryW Then maxEntryW = le.Width
+            Next le
+            If maxEntryW > 0 Then cht.Legend.Width = maxEntryW * legendCols + 16
+            On Error GoTo 0
+        End If
     End If
 
     Dim s As Series
