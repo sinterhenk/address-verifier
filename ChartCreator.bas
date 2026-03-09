@@ -460,25 +460,40 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
             End With
             ' Apply column layout now that font is finalised
             If legendCols > 0 Then
-                Dim nS As Integer: nS = cht.Legend.LegendEntries.Count
+                ' For pie/doughnut legend entries come from points, not series
+                Dim nS As Integer
+                If chartType = xlPie Or chartType = xlDoughnut Then
+                    nS = cht.Legend.LegendEntries.Count
+                    If nS <= 1 Then nS = cht.SeriesCollection(1).Points.Count
+                Else
+                    nS = cht.SeriesCollection.Count
+                End If
                 If nS > legendCols Then
-                    ' Force full-width layout first so entry widths are untruncated
+                    Dim nR As Integer
+                    nR = Int((nS + legendCols - 1) / legendCols)
+                    ' Pie/doughnut: set Top explicitly BEFORE Width so Excel switches
+                    ' the legend out of "auto-bottom" mode and reflowing on Width works
+                    If chartType = xlPie Or chartType = xlDoughnut Then
+                        .Top = cht.PlotArea.Top + cht.PlotArea.Height + 8
+                    End If
+                    ' Force full-width so entry measurements are untruncated
                     .Width = cht.ChartArea.Width
+                    ' Flush render so LegendEntry dimensions are available
+                    Application.ScreenUpdating = True
+                    Application.ScreenUpdating = False
                     Dim le As LegendEntry, maxW As Double, entryH As Double
                     maxW = 0: entryH = 0
                     For Each le In .LegendEntries
                         If le.Width  > maxW  Then maxW  = le.Width
                         If le.Height > entryH Then entryH = le.Height
                     Next le
-                    Dim nR As Integer
-                    nR = Int((nS + legendCols - 1) / legendCols)
-                    ' Width: measured entry width + 20pt padding per column to avoid clipping
+                    ' Width: measured entry width + 20pt padding per column
                     If maxW > 0 Then
                         .Width = (maxW + 20) * legendCols
                     Else
                         .Width = cht.ChartArea.Width * legendCols / nS
                     End If
-                    ' Height: use measured entry height; fallback to font-based estimate
+                    ' Height: measured entry height; fallback to font-based estimate
                     If entryH > 0 Then
                         .Height = entryH * nR * 1.8
                     Else
