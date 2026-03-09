@@ -280,9 +280,34 @@ Private Sub ShowChartCreatorSimple()
         legendCols = 0
     End If
 
+    ' 12. X-axis date label format (optional)
+    Dim xFmtInput As String
+    xFmtInput = InputBox( _
+        "X-axis date label format (leave blank to keep as-is):" & vbCrLf & vbCrLf & _
+        "Presets — type the number:" & vbCrLf & _
+        "  1  FY18, FY19...      (fiscal/calendar year)" & vbCrLf & _
+        "  2  Jan 18, May 18...  (month + short year)" & vbCrLf & _
+        "  3  January 2018...    (full month + full year)" & vbCrLf & _
+        "  4  2018, 2019...      (4-digit year only)" & vbCrLf & _
+        "  5  Q1 18, Q2 18...    (quarter + short year)" & vbCrLf & vbCrLf & _
+        "Or type any Excel date format directly, e.g.  yy  or  mmm-yy", _
+        "Chart Creator - Step 12 of 12: X-Axis Date Format", "")
+    If StrPtr(xFmtInput) = 0 Then Exit Sub
+
+    Dim xAxisNumFmt As String
+    Select Case Trim(xFmtInput)
+        Case "1": xAxisNumFmt = """FY""yy"
+        Case "2": xAxisNumFmt = "mmm yy"
+        Case "3": xAxisNumFmt = "mmmm yyyy"
+        Case "4": xAxisNumFmt = "yyyy"
+        Case "5": xAxisNumFmt = """Q""q yy"
+        Case "":  xAxisNumFmt = ""
+        Case Else: xAxisNumFmt = Trim(xFmtInput)
+    End Select
+
     CreateChart rng, chartType, chartTitle, True, placement, True, False, _
                 colorScheme, 480, 300, fontName, lineWeight, Trim(yFmtInput), _
-                plotByRows, yAxisLines, legendCols
+                plotByRows, yAxisLines, legendCols, xAxisNumFmt
 
 End Sub
 
@@ -305,7 +330,8 @@ Public Sub CreateChart( _
     Optional yAxisNumFmt   As String = "", _
     Optional plotByRows    As Boolean = False, _
     Optional yAxisLines    As Integer = 0, _
-    Optional legendCols    As Integer = 0 _
+    Optional legendCols    As Integer = 0, _
+    Optional xAxisNumFmt   As String = "" _
 )
 
     Dim ws        As Worksheet
@@ -384,10 +410,10 @@ Public Sub CreateChart( _
     ApplyColorScheme cht, colorScheme, chartType, lineWeight
 
     If colorScheme = "Canva" Then
-        ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt, yAxisLines
+        ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt
     Else
         If chartType <> xlPie And chartType <> xlDoughnut And chartType <> xlRadar Then
-            FormatAxes cht, fontName, yAxisNumFmt, yAxisLines
+            FormatAxes cht, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt
         End If
     End If
 
@@ -403,7 +429,8 @@ End Sub
 ' ============================================================
 Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boolean, fontName As String, _
                             Optional yAxisNumFmt As String = "", _
-                            Optional yAxisLines As Integer = 0)
+                            Optional yAxisLines As Integer = 0, _
+                            Optional xAxisNumFmt As String = "")
 
     Const GRAY_LABEL  As Long = 3355443   ' #333333
     Const GRAY_GRID   As Long = 14540253
@@ -485,6 +512,12 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 With .TickLabels.Font
                     .Name = fontName: .Size = 13.1: .Color = GRAY_LABEL: .Bold = False
                 End With
+                If xAxisNumFmt <> "" Then
+                    On Error Resume Next
+                    .AxisType = xlTimeScale
+                    On Error GoTo 0
+                    .TickLabels.NumberFormat = xAxisNumFmt
+                End If
                 If .HasMajorGridlines Then .MajorGridlines.Format.Line.Visible = msoFalse
             End With
 
@@ -634,7 +667,7 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long, 
 End Sub
 
 ' ============================================================
-Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As String = "", Optional yAxisLines As Integer = 0)
+Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As String = "", Optional yAxisLines As Integer = 0, Optional xAxisNumFmt As String = "")
     On Error Resume Next
     Dim axCat As Axis, axVal As Axis
     Set axCat = cht.Axes(xlCategory)
@@ -646,6 +679,12 @@ Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As
         .TickLabels.Font.Size = 13.1
         .TickLabels.Font.Color = RGB(51, 51, 51)
         .AxisBetweenCategories = True
+        If xAxisNumFmt <> "" Then
+            On Error Resume Next
+            .AxisType = xlTimeScale
+            On Error GoTo 0
+            .TickLabels.NumberFormat = xAxisNumFmt
+        End If
         If .HasMajorGridlines Then .MajorGridlines.Format.Line.Visible = msoFalse
     End With
 
