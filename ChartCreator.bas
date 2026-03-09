@@ -232,9 +232,27 @@ Private Sub ShowChartCreatorSimple()
         End Select
     End If
 
+    Dim xAxisTickInterval As Integer: xAxisTickInterval = 0
+    If Not isPieOrDoughnut And (Trim(xFmtInput) = "2" Or Trim(xFmtInput) = "3") Then
+        Dim stepInput As String
+        stepInput = InputBox( _
+            "How many months between each X-axis label?" & vbCrLf & vbCrLf & _
+            "  1  →  every month  (Jan 24, Feb 24, Mar 24...)" & vbCrLf & _
+            "  3  →  every quarter  (Jan 24, Apr 24, Jul 24...)" & vbCrLf & _
+            "  6  →  every half-year  (Jan 24, Jul 24, Jan 25...)" & vbCrLf & _
+            "  12 →  every year  (Jan 24, Jan 25...)" & vbCrLf & vbCrLf & _
+            "Leave blank to let Excel decide automatically.", _
+            "Chart Creator – X-Axis Month Step", "")
+        If StrPtr(stepInput) = 0 Then Exit Sub
+        If IsNumeric(Trim(stepInput)) And Trim(stepInput) <> "" Then
+            xAxisTickInterval = CInt(Trim(stepInput))
+            If xAxisTickInterval < 1 Then xAxisTickInterval = 0
+        End If
+    End If
+
     CreateChart rng, chartType, chartTitle, True, placement, True, False, _
                 colorScheme, Application.CentimetersToPoints(20), Application.CentimetersToPoints(12), fontName, lineWeight, Trim(yFmtInput), _
-                plotByRows, yAxisLines, legendCols, xAxisNumFmt
+                plotByRows, yAxisLines, legendCols, xAxisNumFmt, xAxisTickInterval
 
 End Sub
 
@@ -257,8 +275,9 @@ Public Sub CreateChart( _
     Optional yAxisNumFmt   As String = "", _
     Optional plotByRows    As Boolean = False, _
     Optional yAxisLines    As Integer = 0, _
-    Optional legendCols    As Integer = 0, _
-    Optional xAxisNumFmt   As String = "" _
+    Optional legendCols         As Integer = 0, _
+    Optional xAxisNumFmt        As String = "", _
+    Optional xAxisTickInterval  As Integer = 0 _
 )
 
     Dim ws        As Worksheet
@@ -335,10 +354,10 @@ Public Sub CreateChart( _
     ApplyColorScheme cht, colorScheme, chartType, lineWeight
 
     If colorScheme = "Canva" Then
-        ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, legendCols
+        ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, legendCols, xAxisTickInterval
     Else
         If chartType <> xlPie And chartType <> xlDoughnut And chartType <> xlRadar Then
-            FormatAxes cht, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt
+            FormatAxes cht, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, xAxisTickInterval
         End If
     End If
 
@@ -356,7 +375,8 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                             Optional yAxisNumFmt As String = "", _
                             Optional yAxisLines As Integer = 0, _
                             Optional xAxisNumFmt As String = "", _
-                            Optional legendCols As Integer = 0)
+                            Optional legendCols As Integer = 0, _
+                            Optional xAxisTickInterval As Integer = 0)
 
     Const GRAY_LABEL  As Long = 3355443   ' #333333
     Const GRAY_GRID   As Long = 14540253
@@ -489,6 +509,13 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                     .AxisType = xlTimeScale
                     On Error GoTo 0
                     .TickLabels.NumberFormat = xAxisNumFmt
+                    If xAxisTickInterval > 0 Then
+                        On Error Resume Next
+                        .BaseUnit = xlMonths
+                        .MajorUnitScale = xlMonths
+                        .MajorUnit = xAxisTickInterval
+                        On Error GoTo 0
+                    End If
                 End If
                 If .HasMajorGridlines Then .MajorGridlines.Format.Line.Visible = msoFalse
             End With
@@ -639,7 +666,7 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long, 
 End Sub
 
 ' ============================================================
-Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As String = "", Optional yAxisLines As Integer = 0, Optional xAxisNumFmt As String = "")
+Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As String = "", Optional yAxisLines As Integer = 0, Optional xAxisNumFmt As String = "", Optional xAxisTickInterval As Integer = 0)
     On Error Resume Next
     Dim axCat As Axis, axVal As Axis
     Set axCat = cht.Axes(xlCategory)
@@ -656,6 +683,13 @@ Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As
             .AxisType = xlTimeScale
             On Error GoTo 0
             .TickLabels.NumberFormat = xAxisNumFmt
+            If xAxisTickInterval > 0 Then
+                On Error Resume Next
+                .BaseUnit = xlMonths
+                .MajorUnitScale = xlMonths
+                .MajorUnit = xAxisTickInterval
+                On Error GoTo 0
+            End If
         End If
         If .HasMajorGridlines Then .MajorGridlines.Format.Line.Visible = msoFalse
     End With
