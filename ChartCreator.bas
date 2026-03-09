@@ -122,10 +122,26 @@ Private Sub ShowChartCreatorSimple()
     Dim chartType As Long
     chartType = ChartTypeFromName(CStr(typeNames(idx)))
 
-    ' 3. Title
+    ' 3. Data orientation (rows vs columns)
+    Dim orientInput As String
+    orientInput = InputBox( _
+        "How is your data arranged?" & vbCrLf & vbCrLf & _
+        "1  Each ROW is one series" & vbCrLf & _
+        "   (e.g. Row 1 = Company A, Row 2 = Company B...)" & vbCrLf & _
+        "   Categories (e.g. FY years) run across columns" & vbCrLf & vbCrLf & _
+        "2  Each COLUMN is one series" & vbCrLf & _
+        "   (e.g. Col A = Company A, Col B = Company B...)" & vbCrLf & _
+        "   Categories (e.g. FY years) run down rows", _
+        "Chart Creator - Step 3 of 10: Data Orientation", "1")
+    If StrPtr(orientInput) = 0 Then Exit Sub
+    If orientInput = "" Then orientInput = "1"
+    Dim plotByRows As Boolean
+    plotByRows = (Trim(orientInput) = "1")
+
+    ' 4. Title
     Dim chartTitle As String
     chartTitle = InputBox("Enter a chart title (or leave blank):", _
-                          "Chart Creator - Step 3 of 5: Title", "")
+                          "Chart Creator - Step 4 of 10: Title", "")
     If StrPtr(chartTitle) = 0 Then Exit Sub
 
     ' 4. Color scheme
@@ -139,7 +155,7 @@ Private Sub ShowChartCreatorSimple()
         "5  Pastel" & vbCrLf & _
         "6  Greyscale" & vbCrLf & _
         "7  Dark", _
-        "Chart Creator - Step 4 of 5: Colors", "1")
+        "Chart Creator - Step 5 of 10: Colors", "1")
     If StrPtr(colorInput) = 0 Then Exit Sub
     If colorInput = "" Then colorInput = "1"
 
@@ -158,7 +174,7 @@ Private Sub ShowChartCreatorSimple()
         "1  Right of data" & vbCrLf & _
         "2  Below data" & vbCrLf & _
         "3  New sheet", _
-        "Chart Creator - Step 5 of 7: Placement", "1")
+        "Chart Creator - Step 6 of 10: Placement", "1")
     If StrPtr(placeInput) = 0 Then Exit Sub
     If placeInput = "" Then placeInput = "1"
 
@@ -180,7 +196,7 @@ Private Sub ShowChartCreatorSimple()
         "5  Georgia  (serif)" & vbCrLf & _
         "6  Trebuchet MS" & vbCrLf & _
         vbCrLf & "Or type any font name directly.", _
-        "Chart Creator - Step 6 of 7: Font", "1")
+        "Chart Creator - Step 7 of 10: Font", "1")
     If StrPtr(fontInput) = 0 Then Exit Sub
     If fontInput = "" Then fontInput = "1"
 
@@ -203,7 +219,7 @@ Private Sub ShowChartCreatorSimple()
         "2  = medium (Canva default)" & vbCrLf & _
         "3  = thick" & vbCrLf & vbCrLf & _
         "Or type any number (e.g. 1.5, 2.5)", _
-        "Chart Creator - Step 7 of 7: Line Weight", "2")
+        "Chart Creator - Step 8 of 10: Line Weight", "2")
     If StrPtr(lwInput) = 0 Then Exit Sub
     If lwInput = "" Or Not IsNumeric(lwInput) Then lwInput = "2"
 
@@ -221,11 +237,32 @@ Private Sub ShowChartCreatorSimple()
         "  #,##0   → 1,234" & vbCrLf & _
         "  #,##0.0 → 1,234.5" & vbCrLf & vbCrLf & _
         "Leave blank to keep source data format (or use auto % rounding).", _
-        "Chart Creator - Step 8 of 8: Y-Axis Format", "")
+        "Chart Creator - Step 9 of 10: Y-Axis Format", "")
     If StrPtr(yFmtInput) = 0 Then Exit Sub
 
+    ' 10. Y-axis gridline count
+    Dim gridInput As String
+    gridInput = InputBox( _
+        "Number of Y-axis gridlines (horizontal lines):" & vbCrLf & vbCrLf & _
+        "Examples (for 0%–50% data):" & vbCrLf & _
+        "  5  → lines at 10%, 20%, 30%, 40%, 50% (10% steps)" & vbCrLf & _
+        "  10 → lines at 5%, 10%, 15%... (5% steps)" & vbCrLf & _
+        "  4  → lines at 12.5%, 25%, 37.5%, 50%" & vbCrLf & vbCrLf & _
+        "Leave blank to let Excel decide automatically.", _
+        "Chart Creator - Step 10 of 10: Y-Axis Gridlines", "")
+    If StrPtr(gridInput) = 0 Then Exit Sub
+
+    Dim yAxisLines As Integer
+    If IsNumeric(Trim(gridInput)) And Trim(gridInput) <> "" Then
+        yAxisLines = CInt(Trim(gridInput))
+        If yAxisLines < 1 Then yAxisLines = 0
+    Else
+        yAxisLines = 0
+    End If
+
     CreateChart rng, chartType, chartTitle, True, placement, True, False, _
-                colorScheme, 480, 300, fontName, lineWeight, Trim(yFmtInput)
+                colorScheme, 480, 300, fontName, lineWeight, Trim(yFmtInput), _
+                plotByRows, yAxisLines
 
 End Sub
 
@@ -245,7 +282,9 @@ Public Sub CreateChart( _
     chartH      As Double, _
     Optional fontName      As String = "Libre Baskerville", _
     Optional lineWeight    As Double = 2, _
-    Optional yAxisNumFmt   As String = "" _
+    Optional yAxisNumFmt   As String = "", _
+    Optional plotByRows    As Boolean = False, _
+    Optional yAxisLines    As Integer = 0 _
 )
 
     Dim ws        As Worksheet
@@ -260,7 +299,7 @@ Public Sub CreateChart( _
         Dim newSheet As Chart
         Set newSheet = Charts.Add()
         Set cht = newSheet
-        cht.SetSourceData Source:=plotRange, PlotBy:=xlColumns
+        cht.SetSourceData Source:=plotRange, PlotBy:=IIf(plotByRows, xlRows, xlColumns)
     Else
         Dim leftPos As Double
         Dim topPos  As Double
@@ -279,16 +318,10 @@ Public Sub CreateChart( _
         Set ch = ws.ChartObjects.Add( _
             Left:=leftPos, Top:=topPos, Width:=chartW, Height:=chartH)
         Set cht = ch.Chart
-        cht.SetSourceData Source:=plotRange, PlotBy:=xlColumns
+        cht.SetSourceData Source:=plotRange, PlotBy:=IIf(plotByRows, xlRows, xlColumns)
     End If
 
     cht.ChartType = chartType
-
-    If hasHeaders And chartType <> xlPie And chartType <> xlDoughnut Then
-        On Error Resume Next
-        cht.SeriesCollection(1).XValues = dataRange.Rows(1)
-        On Error GoTo 0
-    End If
 
     If chartTitle <> "" Then
         cht.HasTitle = True
@@ -329,10 +362,10 @@ Public Sub CreateChart( _
     ApplyColorScheme cht, colorScheme, chartType, lineWeight
 
     If colorScheme = "Canva" Then
-        ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt
+        ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt, yAxisLines
     Else
         If chartType <> xlPie And chartType <> xlDoughnut And chartType <> xlRadar Then
-            FormatAxes cht, fontName, yAxisNumFmt
+            FormatAxes cht, fontName, yAxisNumFmt, yAxisLines
         End If
     End If
 
@@ -347,7 +380,8 @@ End Sub
 ' CANVA STYLE
 ' ============================================================
 Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boolean, fontName As String, _
-                            Optional yAxisNumFmt As String = "")
+                            Optional yAxisNumFmt As String = "", _
+                            Optional yAxisLines As Integer = 0)
 
     Const GRAY_LABEL  As Long = 3355443   ' #333333
     Const GRAY_GRID   As Long = 14540253
@@ -444,6 +478,9 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 ElseIf InStr(.TickLabels.NumberFormat, "%") > 0 Then
                     .TickLabels.NumberFormat = "0%"
                 End If
+                If yAxisLines > 0 Then
+                    .MajorUnit = (.MaximumScale - .MinimumScale) / yAxisLines
+                End If
                 If Not .MajorGridlines Is Nothing Then
                     With .MajorGridlines.Format.Line
                         .Visible = msoTrue: .ForeColor.RGB = GRAY_GRID
@@ -451,6 +488,15 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                     End With
                 End If
             End With
+
+            ' Remove markers on line charts for clean Canva look
+            If chartType = xlLine Or chartType = xlLineMarkers Or _
+               chartType = xlXYScatterLines Then
+                Dim sLine As Series
+                For Each sLine In cht.SeriesCollection
+                    sLine.MarkerStyle = xlMarkerStyleNone
+                Next sLine
+            End If
 
     End Select
 
@@ -550,7 +596,7 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long, 
 End Sub
 
 ' ============================================================
-Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As String = "")
+Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As String = "", Optional yAxisLines As Integer = 0)
     On Error Resume Next
     Dim axCat As Axis, axVal As Axis
     Set axCat = cht.Axes(xlCategory)
@@ -574,6 +620,9 @@ Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As
             .TickLabels.NumberFormat = yAxisNumFmt
         ElseIf InStr(.TickLabels.NumberFormat, "%") > 0 Then
             .TickLabels.NumberFormat = "0%"
+        End If
+        If yAxisLines > 0 Then
+            .MajorUnit = (.MaximumScale - .MinimumScale) / yAxisLines
         End If
         With .MajorGridlines.Format.Line
             .Visible = msoTrue
