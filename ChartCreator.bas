@@ -555,7 +555,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 End If
                 .MinimumScale = axMinCanva
                 If yAxisLines > 0 Then
-                    .MajorUnit = NiceUnit((.MaximumScale - .MinimumScale) / yAxisLines)
+                    .MajorUnit = NiceUnit((.MaximumScale - .MinimumScale) / (yAxisLines - 1))
                 End If
                 If Not .MajorGridlines Is Nothing Then
                     With .MajorGridlines.Format.Line
@@ -732,7 +732,7 @@ Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As
         End If
         .MinimumScale = axMinFmt
         If yAxisLines > 0 Then
-            .MajorUnit = NiceUnit((.MaximumScale - .MinimumScale) / yAxisLines)
+            .MajorUnit = NiceUnit((.MaximumScale - .MinimumScale) / (yAxisLines - 1))
         End If
         With .MajorGridlines.Format.Line
             .Visible = msoTrue
