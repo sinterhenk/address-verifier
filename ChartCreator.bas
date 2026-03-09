@@ -388,7 +388,7 @@ Public Sub CreateChart( _
         cht.Legend.Position = xlLegendPositionBottom
         With cht.Legend.Font
             .Name = fontName
-            .Size = 12.1
+            .Size = 13.1
         End With
         If legendCols > 0 Then
             ' Force wrap by setting legend width = widest entry × desired columns
@@ -566,7 +566,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                         Dim mClr As Long
                         mClr = sLine.Format.Line.ForeColor.RGB
                         sLine.MarkerStyle = xlMarkerStyleCircle
-                        sLine.MarkerSize = 5
+                        sLine.MarkerSize = 3
                         sLine.MarkerForegroundColor = mClr
                         sLine.MarkerBackgroundColor = mClr
                     End If
@@ -666,7 +666,7 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long, 
                     s.MarkerStyle = xlMarkerStyleNone
                 ElseIf chartType = xlLineMarkers Or chartType = xlXYScatterLines Then
                     s.MarkerStyle = xlMarkerStyleCircle
-                    s.MarkerSize = 5
+                    s.MarkerSize = 3
                     s.MarkerForegroundColor = clr
                     s.MarkerBackgroundColor = clr
                 End If
