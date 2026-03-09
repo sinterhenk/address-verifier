@@ -472,9 +472,9 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                     End If
                     ' Height: use measured entry height; fallback to font-based estimate
                     If entryH > 0 Then
-                        .Height = entryH * nR * 1.3
+                        .Height = entryH * nR * 1.8
                     Else
-                        .Height = 12.1 * 1.8 * nR
+                        .Height = 12.1 * 2.4 * nR
                     End If
                 End If
             End If
