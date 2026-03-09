@@ -108,14 +108,32 @@ For **Pie / Doughnut** charts, use a single data column:
 
 ## Color Schemes
 
-| Name       | Description                              |
-|------------|------------------------------------------|
-| Default    | Excel's built-in theme colours           |
-| Office     | Classic Office blue/orange palette       |
-| Vivid      | High-contrast, bright colours            |
-| Pastel     | Soft, presentation-friendly tones        |
-| Greyscale  | Black-and-white printing                 |
-| Dark       | Teal/amber palette for dark backgrounds  |
+| Name       | Description                                                        |
+|------------|--------------------------------------------------------------------|
+| **Canva**  | **Matches Canva editorial style** — muted teal/tan/olive palette, white background, no borders, light gray gridlines (default) |
+| Default    | Excel's built-in theme colours                                     |
+| Office     | Classic Office blue/orange palette                                 |
+| Vivid      | High-contrast, bright colours                                      |
+| Pastel     | Soft, presentation-friendly tones                                  |
+| Greyscale  | Black-and-white printing                                           |
+| Dark       | Teal/amber palette for dark backgrounds                            |
+
+### Canva palette (column / line charts)
+| Slot | Colour | Example use |
+|------|--------|-------------|
+| 1 | Muted teal `RGB(68,103,106)` | Series 1 |
+| 2 | Light tan `RGB(188,178,156)` | Series 2 |
+| 3 | Dark teal `RGB(32,85,92)` | Series 3 |
+| 4 | Olive/khaki `RGB(142,127,80)` | Series 4 |
+
+### Canva palette (doughnut / pie charts)
+| Slot | Colour | Example use |
+|------|--------|-------------|
+| 1 | Dark red `RGB(148,58,58)` | Segment 1 |
+| 2 | Dark teal `RGB(52,88,92)` | Segment 2 |
+| 3 | Light stone `RGB(183,177,165)` | Segment 3 |
+| 4 | Dark slate `RGB(72,83,86)` | Segment 4 |
+| 5 | Light cream `RGB(212,204,188)` | Segment 5 |
 
 ---
 

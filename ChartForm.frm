@@ -156,14 +156,14 @@ Private Sub PopulateDefaults()
     cboPlacement.AddItem "New sheet"
     cboPlacement.ListIndex = 0
 
-    ' Color schemes
+    ' Color schemes  ("Canva" first = default)
     Dim schemes As Variant
-    schemes = Array("Default", "Office", "Vivid", "Pastel", "Greyscale", "Dark")
+    schemes = Array("Canva", "Default", "Office", "Vivid", "Pastel", "Greyscale", "Dark")
     Dim sc As Variant
     For Each sc In schemes
         cboColor.AddItem sc
     Next sc
-    cboColor.ListIndex = 1
+    cboColor.ListIndex = 0  ' Canva is default
 
     ' Size defaults (points; 1pt ≈ 1/72 inch)
     txtW.Text = "480"
