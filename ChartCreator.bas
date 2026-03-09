@@ -547,6 +547,9 @@ Private Sub FormatAxes(cht As Chart, fontName As String)
         .HasTitle = False
         .TickLabels.Font.Name = fontName
         .TickLabels.Font.Size = 12.1
+        If InStr(.TickLabels.NumberFormat, "%") > 0 Then
+            .TickLabels.NumberFormat = "0%"
+        End If
         With .MajorGridlines.Format.Line
             .Visible = msoTrue
             .ForeColor.RGB = RGB(200, 200, 200)
