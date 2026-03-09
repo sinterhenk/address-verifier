@@ -460,7 +460,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
             End With
             ' Apply column layout now that font is finalised
             If legendCols > 0 Then
-                Dim nS As Integer: nS = cht.SeriesCollection.Count
+                Dim nS As Integer: nS = cht.Legend.LegendEntries.Count
                 If nS > legendCols Then
                     ' Force full-width layout first so entry widths are untruncated
                     .Width = cht.ChartArea.Width
