@@ -180,27 +180,6 @@ Private Sub ShowChartCreatorSimple()
         If StrPtr(yAxisMinInput) = 0 Then Exit Sub
         If IsNumeric(Trim(yAxisMinInput)) And Trim(yAxisMinInput) <> "" Then
             yAxisMin = CDbl(Trim(yAxisMinInput))
-            ' Auto-scale: if the axis will be shown as %, convert whole-number input
-            ' (e.g. user types 2 → stored as 0.02). Applies only when value >= 1 to
-            ' avoid double-dividing if the user already entered a decimal like 0.02.
-            Dim isPercentAxis As Boolean: isPercentAxis = False
-            If InStr(yFmtInput, "%") > 0 Then
-                isPercentAxis = True
-            ElseIf Trim(yFmtInput) = "" Then
-                ' No explicit format chosen – check the source data cells
-                Dim dataCell As Range
-                On Error Resume Next
-                Set dataCell = rng.SpecialCells(xlCellTypeConstants, xlNumbers)
-                On Error GoTo 0
-                If Not dataCell Is Nothing Then
-                    If InStr(dataCell.Cells(1, 1).NumberFormat, "%") > 0 Then
-                        isPercentAxis = True
-                    End If
-                End If
-            End If
-            If isPercentAxis And Abs(yAxisMin) >= 1 Then
-                yAxisMin = yAxisMin / 100
-            End If
         End If
     End If
 
@@ -565,12 +544,16 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 With .TickLabels.Font
                     .Name = fontName: .Size = 13.1: .Color = GRAY_LABEL: .Bold = False
                 End With
-                .MinimumScale = yAxisMin
                 If yAxisNumFmt <> "" Then
                     .TickLabels.NumberFormat = yAxisNumFmt
                 ElseIf InStr(.TickLabels.NumberFormat, "%") > 0 Then
                     .TickLabels.NumberFormat = "0%"
                 End If
+                Dim axMinCanva As Double: axMinCanva = yAxisMin
+                If InStr(.TickLabels.NumberFormat, "%") > 0 And Abs(axMinCanva) >= 1 Then
+                    axMinCanva = axMinCanva / 100
+                End If
+                .MinimumScale = axMinCanva
                 If yAxisLines > 0 Then
                     .MajorUnit = (.MaximumScale - .MinimumScale) / yAxisLines
                 End If
@@ -738,12 +721,16 @@ Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As
         .TickLabels.Font.Name = fontName
         .TickLabels.Font.Size = 13.1
         .TickLabels.Font.Color = RGB(51, 51, 51)
-        .MinimumScale = yAxisMin
         If yAxisNumFmt <> "" Then
             .TickLabels.NumberFormat = yAxisNumFmt
         ElseIf InStr(.TickLabels.NumberFormat, "%") > 0 Then
             .TickLabels.NumberFormat = "0%"
         End If
+        Dim axMinFmt As Double: axMinFmt = yAxisMin
+        If InStr(.TickLabels.NumberFormat, "%") > 0 And Abs(axMinFmt) >= 1 Then
+            axMinFmt = axMinFmt / 100
+        End If
+        .MinimumScale = axMinFmt
         If yAxisLines > 0 Then
             .MajorUnit = (.MaximumScale - .MinimumScale) / yAxisLines
         End If
