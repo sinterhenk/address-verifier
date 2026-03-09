@@ -229,7 +229,7 @@ Public Sub CreateChart( _
     colorScheme As String, _
     chartW      As Double, _
     chartH      As Double, _
-    Optional fontName   As String = "Calibri", _
+    Optional fontName   As String = "Libre Baskerville", _
     Optional lineWeight As Double = 2 _
 )
 
@@ -281,7 +281,7 @@ Public Sub CreateChart( _
         With cht.ChartTitle.Font
             .Name = fontName
             .Bold = False
-            .Size = 13
+            .Size = 15.6
             .Color = RGB(80, 80, 80)
         End With
     Else
@@ -360,7 +360,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
 
     If cht.HasTitle Then
         With cht.ChartTitle.Font
-            .Name = fontName: .Size = 13: .Color = RGB(80, 80, 80): .Bold = False
+            .Name = fontName: .Size = 15.6: .Color = RGB(80, 80, 80): .Bold = False
         End With
     End If
 
