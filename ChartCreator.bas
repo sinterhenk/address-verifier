@@ -284,7 +284,7 @@ Private Sub ShowChartCreatorSimple()
 
     CreateChart rng, chartType, chartTitle, True, placement, True, False, _
                 colorScheme, Application.CentimetersToPoints(20), Application.CentimetersToPoints(12), fontName, lineWeight, Trim(yFmtInput), _
-                plotByRows, yAxisLines, legendCols, xAxisNumFmt, xAxisTickInterval, yAxisMin
+                plotByRows, yAxisLines, legendCols, xAxisNumFmt, xAxisTickInterval, yAxisMin, yAxisMax, hasYAxisMax
 
 End Sub
 
@@ -310,7 +310,9 @@ Public Sub CreateChart( _
     Optional legendCols         As Integer = 0, _
     Optional xAxisNumFmt        As String = "", _
     Optional xAxisTickInterval  As Integer = 0, _
-    Optional yAxisMin           As Double = 0 _
+    Optional yAxisMin           As Double = 0, _
+    Optional yAxisMax           As Double = 0, _
+    Optional hasYAxisMax        As Boolean = False _
 )
 
     Dim ws        As Worksheet
