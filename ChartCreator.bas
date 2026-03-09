@@ -487,6 +487,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                         If le.Width  > maxW  Then maxW  = le.Width
                         If le.Height > entryH Then entryH = le.Height
                     Next le
+                    Application.ScreenUpdating = True
                     ' Width: measured entry width + 20pt padding per column
                     If maxW > 0 Then
                         .Width = (maxW + 20) * legendCols
