@@ -387,7 +387,7 @@ Public Sub CreateChart( _
     ApplyColorScheme cht, colorScheme, chartType, lineWeight
 
     If colorScheme = "Canva" Then
-        ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, legendCols, xAxisTickInterval, yAxisMin
+        ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, legendCols, xAxisTickInterval, yAxisMin, yAxisMax, hasYAxisMax
     Else
         If chartType <> xlPie And chartType <> xlDoughnut And chartType <> xlRadar Then
             FormatAxes cht, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, xAxisTickInterval, yAxisMin, yAxisMax, hasYAxisMax
@@ -410,7 +410,9 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                             Optional xAxisNumFmt As String = "", _
                             Optional legendCols As Integer = 0, _
                             Optional xAxisTickInterval As Integer = 0, _
-                            Optional yAxisMin As Double = 0)
+                            Optional yAxisMin As Double = 0, _
+                            Optional yAxisMax As Double = 0, _
+                            Optional hasYAxisMax As Boolean = False)
 
     Const GRAY_LABEL  As Long = 3355443   ' #333333
     Const GRAY_GRID   As Long = 14540253
