@@ -494,18 +494,35 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long, 
     Dim i As Integer
     Dim s As Series
     i = 0
-    For Each s In cht.SeriesCollection
-        Dim clr As Long
-        clr = palettes(i Mod (UBound(palettes) + 1))
-        s.Format.Fill.ForeColor.RGB = clr
-        s.Format.Line.ForeColor.RGB = clr
-        If chartType = xlLine Or chartType = xlLineMarkers Or _
-           chartType = xlXYScatterLines Then
-            s.Format.Line.Weight = lineWeight
-            If chartType = xlLine Then s.MarkerStyle = xlMarkerStyleNone
-        End If
-        i = i + 1
-    Next s
+
+    If chartType = xlPie Or chartType = xlDoughnut Then
+        ' Color each slice (point) individually
+        Dim s1 As Series
+        Set s1 = cht.SeriesCollection(1)
+        Dim pt As Point
+        Dim ptIdx As Integer
+        ptIdx = 0
+        For Each pt In s1.Points
+            Dim pClr As Long
+            pClr = palettes(ptIdx Mod (UBound(palettes) + 1))
+            pt.Format.Fill.ForeColor.RGB = pClr
+            pt.Format.Line.ForeColor.RGB = pClr
+            ptIdx = ptIdx + 1
+        Next pt
+    Else
+        For Each s In cht.SeriesCollection
+            Dim clr As Long
+            clr = palettes(i Mod (UBound(palettes) + 1))
+            s.Format.Fill.ForeColor.RGB = clr
+            s.Format.Line.ForeColor.RGB = clr
+            If chartType = xlLine Or chartType = xlLineMarkers Or _
+               chartType = xlXYScatterLines Then
+                s.Format.Line.Weight = lineWeight
+                If chartType = xlLine Then s.MarkerStyle = xlMarkerStyleNone
+            End If
+            i = i + 1
+        Next s
+    End If
 
 End Sub
 
