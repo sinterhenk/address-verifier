@@ -454,16 +454,27 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
             If legendCols > 0 Then
                 Dim nS As Integer: nS = cht.SeriesCollection.Count
                 If nS > legendCols Then
-                    Dim le As LegendEntry, maxW As Double
-                    maxW = 0
+                    ' Force full-width layout first so entry widths are untruncated
+                    .Width = cht.ChartArea.Width
+                    Dim le As LegendEntry, maxW As Double, entryH As Double
+                    maxW = 0: entryH = 0
                     For Each le In .LegendEntries
-                        If le.Width > maxW Then maxW = le.Width
+                        If le.Width  > maxW  Then maxW  = le.Width
+                        If le.Height > entryH Then entryH = le.Height
                     Next le
+                    Dim nR As Integer
+                    nR = Int((nS + legendCols - 1) / legendCols)
+                    ' Width: use measured entry width; fallback to chart proportion
                     If maxW > 0 Then
-                        Dim nR As Integer
-                        nR = Int((nS + legendCols - 1) / legendCols)
                         .Width = maxW * legendCols
-                        .Height = .Height * nR
+                    Else
+                        .Width = cht.ChartArea.Width * legendCols / nS
+                    End If
+                    ' Height: use measured entry height; fallback to font-based estimate
+                    If entryH > 0 Then
+                        .Height = entryH * nR * 1.3
+                    Else
+                        .Height = 12.1 * 1.8 * nR
                     End If
                 End If
             End If
