@@ -168,7 +168,25 @@ Private Sub ShowChartCreatorSimple()
         If StrPtr(yFmtInput) = 0 Then Exit Sub
     End If
 
-    ' 10. Y-axis gridline count (not applicable to pie/doughnut charts)
+    ' Y-axis minimum value
+    Dim yAxisMinInput As String: yAxisMinInput = ""
+    Dim yAxisMin As Double:     yAxisMin      = 0
+    If Not isPieOrDoughnut Then
+        yAxisMinInput = InputBox( _
+            "Y-axis starting value (minimum):" & vbCrLf & vbCrLf & _
+            "Leave blank to start at 0." & vbCrLf & vbCrLf & _
+            "Examples:" & vbCrLf & _
+            "  0     → start at 0%  (default)" & vbCrLf & _
+            "  0.02  → start at 2%  (data stored as 0–1)" & vbCrLf & _
+            "  2     → start at 2   (data stored as whole numbers)", _
+            "Chart Creator - Step 6 of 9: Y-Axis Minimum", "")
+        If StrPtr(yAxisMinInput) = 0 Then Exit Sub
+        If IsNumeric(Trim(yAxisMinInput)) And Trim(yAxisMinInput) <> "" Then
+            yAxisMin = CDbl(Trim(yAxisMinInput))
+        End If
+    End If
+
+    ' Y-axis gridline count (not applicable to pie/doughnut charts)
     Dim yAxisLines As Integer: yAxisLines = 0
     If Not isPieOrDoughnut Then
         Dim gridInput As String
@@ -179,7 +197,7 @@ Private Sub ShowChartCreatorSimple()
             "  10 → lines at 5%, 10%, 15%... (5% steps)" & vbCrLf & _
             "  4  → lines at 12.5%, 25%, 37.5%, 50%" & vbCrLf & vbCrLf & _
             "Leave blank to let Excel decide automatically.", _
-            "Chart Creator - Step 6 of 8: Y-Axis Gridlines", "")
+            "Chart Creator - Step 7 of 9: Y-Axis Gridlines", "")
         If StrPtr(gridInput) = 0 Then Exit Sub
         If IsNumeric(Trim(gridInput)) And Trim(gridInput) <> "" Then
             yAxisLines = CInt(Trim(gridInput))
@@ -187,7 +205,7 @@ Private Sub ShowChartCreatorSimple()
         End If
     End If
 
-    ' 11. Legend columns
+    ' Legend columns
     Dim legColInput As String
     legColInput = InputBox( _
         "Choose a legend layout (enter a number):" & vbCrLf & vbCrLf & _
@@ -196,7 +214,7 @@ Private Sub ShowChartCreatorSimple()
         "  3  →  3 per row  – e.g. 6 series → 3×2 grid" & vbCrLf & vbCrLf & _
         "Any other number = that many entries per row." & vbCrLf & _
         "Leave blank to let Excel decide automatically.", _
-        "Chart Creator - Step 7 of 8: Legend Layout", "1")
+        "Chart Creator - Step 8 of 9: Legend Layout", "1")
     If StrPtr(legColInput) = 0 Then Exit Sub
 
     Dim legendCols As Integer
@@ -220,7 +238,7 @@ Private Sub ShowChartCreatorSimple()
             "  4  2018, 2019...      (4-digit year only)" & vbCrLf & _
             "  5  Q1 18, Q2 18...    (quarter + short year)" & vbCrLf & vbCrLf & _
             "Or type any Excel date format directly, e.g.  yy  or  mmm-yy", _
-            "Chart Creator - Step 8 of 8: X-Axis Date Format", "")
+            "Chart Creator - Step 9 of 9: X-Axis Date Format", "")
         If StrPtr(xFmtInput) = 0 Then Exit Sub
         Select Case Trim(xFmtInput)
             Case "1": xAxisNumFmt = """FY""yy"
@@ -252,7 +270,7 @@ Private Sub ShowChartCreatorSimple()
 
     CreateChart rng, chartType, chartTitle, True, placement, True, False, _
                 colorScheme, Application.CentimetersToPoints(20), Application.CentimetersToPoints(12), fontName, lineWeight, Trim(yFmtInput), _
-                plotByRows, yAxisLines, legendCols, xAxisNumFmt, xAxisTickInterval
+                plotByRows, yAxisLines, legendCols, xAxisNumFmt, xAxisTickInterval, yAxisMin
 
 End Sub
 
@@ -277,7 +295,8 @@ Public Sub CreateChart( _
     Optional yAxisLines    As Integer = 0, _
     Optional legendCols         As Integer = 0, _
     Optional xAxisNumFmt        As String = "", _
-    Optional xAxisTickInterval  As Integer = 0 _
+    Optional xAxisTickInterval  As Integer = 0, _
+    Optional yAxisMin           As Double = 0 _
 )
 
     Dim ws        As Worksheet
@@ -354,10 +373,10 @@ Public Sub CreateChart( _
     ApplyColorScheme cht, colorScheme, chartType, lineWeight
 
     If colorScheme = "Canva" Then
-        ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, legendCols, xAxisTickInterval
+        ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, legendCols, xAxisTickInterval, yAxisMin
     Else
         If chartType <> xlPie And chartType <> xlDoughnut And chartType <> xlRadar Then
-            FormatAxes cht, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, xAxisTickInterval
+            FormatAxes cht, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, xAxisTickInterval, yAxisMin
         End If
     End If
 
@@ -376,7 +395,8 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                             Optional yAxisLines As Integer = 0, _
                             Optional xAxisNumFmt As String = "", _
                             Optional legendCols As Integer = 0, _
-                            Optional xAxisTickInterval As Integer = 0)
+                            Optional xAxisTickInterval As Integer = 0, _
+                            Optional yAxisMin As Double = 0)
 
     Const GRAY_LABEL  As Long = 3355443   ' #333333
     Const GRAY_GRID   As Long = 14540253
@@ -527,6 +547,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 With .TickLabels.Font
                     .Name = fontName: .Size = 13.1: .Color = GRAY_LABEL: .Bold = False
                 End With
+                .MinimumScale = yAxisMin
                 If yAxisNumFmt <> "" Then
                     .TickLabels.NumberFormat = yAxisNumFmt
                 ElseIf InStr(.TickLabels.NumberFormat, "%") > 0 Then
@@ -666,7 +687,7 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long, 
 End Sub
 
 ' ============================================================
-Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As String = "", Optional yAxisLines As Integer = 0, Optional xAxisNumFmt As String = "", Optional xAxisTickInterval As Integer = 0)
+Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As String = "", Optional yAxisLines As Integer = 0, Optional xAxisNumFmt As String = "", Optional xAxisTickInterval As Integer = 0, Optional yAxisMin As Double = 0)
     On Error Resume Next
     Dim axCat As Axis, axVal As Axis
     Set axCat = cht.Axes(xlCategory)
@@ -699,6 +720,7 @@ Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As
         .TickLabels.Font.Name = fontName
         .TickLabels.Font.Size = 13.1
         .TickLabels.Font.Color = RGB(51, 51, 51)
+        .MinimumScale = yAxisMin
         If yAxisNumFmt <> "" Then
             .TickLabels.NumberFormat = yAxisNumFmt
         ElseIf InStr(.TickLabels.NumberFormat, "%") > 0 Then
