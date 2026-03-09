@@ -176,10 +176,27 @@ Private Sub ShowChartCreatorSimple()
             "Y-axis starting value (minimum):" & vbCrLf & vbCrLf & _
             "Leave blank to start at 0." & vbCrLf & vbCrLf & _
             "For percentage charts just enter the number — e.g. type 2 to start at 2%.", _
-            "Chart Creator - Step 6 of 9: Y-Axis Minimum", "")
+            "Chart Creator - Step 6 of 10: Y-Axis Minimum", "")
         If StrPtr(yAxisMinInput) = 0 Then Exit Sub
         If IsNumeric(Trim(yAxisMinInput)) And Trim(yAxisMinInput) <> "" Then
             yAxisMin = CDbl(Trim(yAxisMinInput))
+        End If
+    End If
+
+    ' Y-axis maximum value
+    Dim yAxisMaxInput As String: yAxisMaxInput = ""
+    Dim yAxisMax As Double:     yAxisMax      = 0
+    Dim hasYAxisMax As Boolean: hasYAxisMax   = False
+    If Not isPieOrDoughnut Then
+        yAxisMaxInput = InputBox( _
+            "Y-axis ending value (maximum):" & vbCrLf & vbCrLf & _
+            "Leave blank to let Excel decide automatically." & vbCrLf & vbCrLf & _
+            "For percentage charts just enter the number — e.g. type 50 to end at 50%.", _
+            "Chart Creator - Step 7 of 10: Y-Axis Maximum", "")
+        If StrPtr(yAxisMaxInput) = 0 Then Exit Sub
+        If IsNumeric(Trim(yAxisMaxInput)) And Trim(yAxisMaxInput) <> "" Then
+            yAxisMax = CDbl(Trim(yAxisMaxInput))
+            hasYAxisMax = True
         End If
     End If
 
@@ -194,7 +211,7 @@ Private Sub ShowChartCreatorSimple()
             "  10 → lines at 5%, 10%, 15%... (5% steps)" & vbCrLf & _
             "  4  → lines at 12.5%, 25%, 37.5%, 50%" & vbCrLf & vbCrLf & _
             "Leave blank to let Excel decide automatically.", _
-            "Chart Creator - Step 7 of 9: Y-Axis Gridlines", "")
+            "Chart Creator - Step 8 of 10: Y-Axis Gridlines", "")
         If StrPtr(gridInput) = 0 Then Exit Sub
         If IsNumeric(Trim(gridInput)) And Trim(gridInput) <> "" Then
             yAxisLines = CInt(Trim(gridInput))
@@ -211,7 +228,7 @@ Private Sub ShowChartCreatorSimple()
         "  3  →  3 per row  – e.g. 6 series → 3×2 grid" & vbCrLf & vbCrLf & _
         "Any other number = that many entries per row." & vbCrLf & _
         "Leave blank to let Excel decide automatically.", _
-        "Chart Creator - Step 8 of 9: Legend Layout", "1")
+        "Chart Creator - Step 9 of 10: Legend Layout", "1")
     If StrPtr(legColInput) = 0 Then Exit Sub
 
     Dim legendCols As Integer
@@ -235,7 +252,7 @@ Private Sub ShowChartCreatorSimple()
             "  4  2018, 2019...      (4-digit year only)" & vbCrLf & _
             "  5  Q1 18, Q2 18...    (quarter + short year)" & vbCrLf & vbCrLf & _
             "Or type any Excel date format directly, e.g.  yy  or  mmm-yy", _
-            "Chart Creator - Step 9 of 9: X-Axis Date Format", "")
+            "Chart Creator - Step 10 of 10: X-Axis Date Format", "")
         If StrPtr(xFmtInput) = 0 Then Exit Sub
         Select Case Trim(xFmtInput)
             Case "1": xAxisNumFmt = """FY""yy"
@@ -373,7 +390,7 @@ Public Sub CreateChart( _
         ApplyCanvaStyle cht, chartType, showLegend, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, legendCols, xAxisTickInterval, yAxisMin
     Else
         If chartType <> xlPie And chartType <> xlDoughnut And chartType <> xlRadar Then
-            FormatAxes cht, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, xAxisTickInterval, yAxisMin
+            FormatAxes cht, fontName, yAxisNumFmt, yAxisLines, xAxisNumFmt, xAxisTickInterval, yAxisMin, yAxisMax, hasYAxisMax
         End If
     End If
 
@@ -554,8 +571,15 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                     axMinCanva = axMinCanva / 100
                 End If
                 .MinimumScale = axMinCanva
+                If hasYAxisMax Then
+                    Dim axMaxCanva As Double: axMaxCanva = yAxisMax
+                    If InStr(.TickLabels.NumberFormat, "%") > 0 And Abs(axMaxCanva) >= 1 Then
+                        axMaxCanva = axMaxCanva / 100
+                    End If
+                    .MaximumScale = axMaxCanva
+                End If
                 If yAxisLines > 0 Then
-                    .MajorUnit = (.MaximumScale - .MinimumScale) / (yAxisLines - 1)
+                    .MajorUnit = NiceUnit((.MaximumScale - .MinimumScale) / yAxisLines)
                 End If
                 If Not .MajorGridlines Is Nothing Then
                     With .MajorGridlines.Format.Line
@@ -688,7 +712,7 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long, 
 End Sub
 
 ' ============================================================
-Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As String = "", Optional yAxisLines As Integer = 0, Optional xAxisNumFmt As String = "", Optional xAxisTickInterval As Integer = 0, Optional yAxisMin As Double = 0)
+Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As String = "", Optional yAxisLines As Integer = 0, Optional xAxisNumFmt As String = "", Optional xAxisTickInterval As Integer = 0, Optional yAxisMin As Double = 0, Optional yAxisMax As Double = 0, Optional hasYAxisMax As Boolean = False)
     On Error Resume Next
     Dim axCat As Axis, axVal As Axis
     Set axCat = cht.Axes(xlCategory)
@@ -731,8 +755,15 @@ Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As
             axMinFmt = axMinFmt / 100
         End If
         .MinimumScale = axMinFmt
+        If hasYAxisMax Then
+            Dim axMaxFmt As Double: axMaxFmt = yAxisMax
+            If InStr(.TickLabels.NumberFormat, "%") > 0 And Abs(axMaxFmt) >= 1 Then
+                axMaxFmt = axMaxFmt / 100
+            End If
+            .MaximumScale = axMaxFmt
+        End If
         If yAxisLines > 0 Then
-            .MajorUnit = (.MaximumScale - .MinimumScale) / (yAxisLines - 1)
+            .MajorUnit = NiceUnit((.MaximumScale - .MinimumScale) / yAxisLines)
         End If
         With .MajorGridlines.Format.Line
             .Visible = msoTrue
@@ -786,6 +817,23 @@ Private Function ParseColor(s As String) As Long
     End If
 Fail:
     ParseColor = -1
+End Function
+
+Private Function NiceUnit(rawUnit As Double) As Double
+    If rawUnit <= 0 Then NiceUnit = rawUnit: Exit Function
+    Dim mag As Double: mag = 10 ^ Int(Log(rawUnit) / Log(10))
+    Dim f As Double:   f   = rawUnit / mag
+    If f <= 1 Then
+        NiceUnit = mag
+    ElseIf f <= 2 Then
+        NiceUnit = 2 * mag
+    ElseIf f <= 2.5 Then
+        NiceUnit = 2.5 * mag
+    ElseIf f <= 5 Then
+        NiceUnit = 5 * mag
+    Else
+        NiceUnit = 10 * mag
+    End If
 End Function
 
 Private Function ColorToHex(clr As Long) As String
