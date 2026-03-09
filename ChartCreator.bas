@@ -391,12 +391,18 @@ Public Sub CreateChart( _
             .Size = 12.1
         End With
         If legendCols > 0 Then
-            ' Scale auto-width (all entries in 1 row) down to desired columns per row
             On Error Resume Next
             Dim nSeries As Integer
             nSeries = cht.SeriesCollection.Count
             If nSeries > legendCols Then
-                cht.Legend.Width = (cht.Legend.Width / nSeries) * legendCols
+                Dim autoH As Double, autoW As Double
+                autoH = cht.Legend.Height
+                autoW = cht.Legend.Width
+                cht.Legend.Width = (autoW / nSeries) * legendCols
+                ' Expand height for the extra rows
+                Dim nRows As Integer
+                nRows = Int((nSeries + legendCols - 1) / legendCols)
+                cht.Legend.Height = autoH * nRows
             End If
             On Error GoTo 0
         End If
@@ -461,7 +467,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
             .Format.Line.Visible = msoFalse
             .Interior.Color = WHITE
             With .Font
-                .Name = fontName: .Size = 9: .Color = GRAY_LABEL: .Bold = False
+                .Name = fontName: .Size = 12.1: .Color = GRAY_LABEL: .Bold = False
             End With
         End With
     End If
