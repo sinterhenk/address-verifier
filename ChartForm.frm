@@ -317,20 +317,6 @@ Private Function AddLabel(parent As Object, caption As String, _
     Set AddLabel = lbl
 End Function
 
-Private Sub AddLabel(parent As Object, caption As String, _
-    x As Integer, y As Integer, w As Integer, h As Integer)
-    Dim lbl As MSForms.Label
-    Set lbl = parent.Controls.Add("Forms.Label.1")
-    With lbl
-        .Caption  = caption
-        .Left     = x
-        .Top      = y
-        .Width    = w
-        .Height   = h
-        .Font.Size = 9
-    End With
-End Sub
-
 Private Function AddTextBox(parent As Object, name As String, _
     x As Integer, y As Integer, w As Integer, h As Integer) As MSForms.TextBox
     Dim tb As MSForms.TextBox
