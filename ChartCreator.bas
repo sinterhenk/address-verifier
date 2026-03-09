@@ -122,6 +122,9 @@ Private Sub ShowChartCreatorSimple()
     Dim chartType As Long
     chartType = ChartTypeFromName(CStr(typeNames(idx)))
 
+    Dim isPieOrDoughnut As Boolean
+    isPieOrDoughnut = (chartType = xlPie Or chartType = xlDoughnut)
+
     ' 3. Data orientation (rows vs columns)
     Dim orientInput As String
     orientInput = InputBox( _
@@ -211,53 +214,55 @@ Private Sub ShowChartCreatorSimple()
         Case Else: fontName = Trim(fontInput)
     End Select
 
-    ' 7. Line weight (shown for all types; mainly affects line/scatter charts)
-    Dim lwInput As String
-    lwInput = InputBox( _
-        "Line weight for line/scatter charts (in points):" & vbCrLf & vbCrLf & _
-        "1  = thin" & vbCrLf & _
-        "2  = medium (Canva default)" & vbCrLf & _
-        "3  = thick" & vbCrLf & vbCrLf & _
-        "Or type any number (e.g. 1.5, 2.5)", _
-        "Chart Creator - Step 8 of 10: Line Weight", "2")
-    If StrPtr(lwInput) = 0 Then Exit Sub
-    If lwInput = "" Or Not IsNumeric(lwInput) Then lwInput = "2"
+    ' 7. Line weight (not applicable to pie/doughnut charts)
+    Dim lineWeight As Double: lineWeight = 2
+    If Not isPieOrDoughnut Then
+        Dim lwInput As String
+        lwInput = InputBox( _
+            "Line weight for line/scatter charts (in points):" & vbCrLf & vbCrLf & _
+            "1  = thin" & vbCrLf & _
+            "2  = medium (Canva default)" & vbCrLf & _
+            "3  = thick" & vbCrLf & vbCrLf & _
+            "Or type any number (e.g. 1.5, 2.5)", _
+            "Chart Creator - Step 8 of 10: Line Weight", "2")
+        If StrPtr(lwInput) = 0 Then Exit Sub
+        If lwInput = "" Or Not IsNumeric(lwInput) Then lwInput = "2"
+        lineWeight = CDbl(lwInput)
+    End If
 
-    Dim lineWeight As Double
-    lineWeight = CDbl(lwInput)
+    ' 8. Y-axis number format (not applicable to pie/doughnut charts)
+    Dim yFmtInput As String: yFmtInput = ""
+    If Not isPieOrDoughnut Then
+        yFmtInput = InputBox( _
+            "Y-axis number format (leave blank for auto):" & vbCrLf & vbCrLf & _
+            "Examples:" & vbCrLf & _
+            "  0%      → 10%  (whole, default for % data)" & vbCrLf & _
+            "  0.0%    → 10.1%" & vbCrLf & _
+            "  0.00%   → 10.12%" & vbCrLf & _
+            "  #,##0   → 1,234" & vbCrLf & _
+            "  #,##0.0 → 1,234.5" & vbCrLf & vbCrLf & _
+            "Leave blank to keep source data format (or use auto % rounding).", _
+            "Chart Creator - Step 9 of 10: Y-Axis Format", "")
+        If StrPtr(yFmtInput) = 0 Then Exit Sub
+    End If
 
-    ' 8. Y-axis number format (optional)
-    Dim yFmtInput As String
-    yFmtInput = InputBox( _
-        "Y-axis number format (leave blank for auto):" & vbCrLf & vbCrLf & _
-        "Examples:" & vbCrLf & _
-        "  0%      → 10%  (whole, default for % data)" & vbCrLf & _
-        "  0.0%    → 10.1%" & vbCrLf & _
-        "  0.00%   → 10.12%" & vbCrLf & _
-        "  #,##0   → 1,234" & vbCrLf & _
-        "  #,##0.0 → 1,234.5" & vbCrLf & vbCrLf & _
-        "Leave blank to keep source data format (or use auto % rounding).", _
-        "Chart Creator - Step 9 of 10: Y-Axis Format", "")
-    If StrPtr(yFmtInput) = 0 Then Exit Sub
-
-    ' 10. Y-axis gridline count
-    Dim gridInput As String
-    gridInput = InputBox( _
-        "Number of Y-axis gridlines (horizontal lines):" & vbCrLf & vbCrLf & _
-        "Examples (for 0%–50% data):" & vbCrLf & _
-        "  5  → lines at 10%, 20%, 30%, 40%, 50% (10% steps)" & vbCrLf & _
-        "  10 → lines at 5%, 10%, 15%... (5% steps)" & vbCrLf & _
-        "  4  → lines at 12.5%, 25%, 37.5%, 50%" & vbCrLf & vbCrLf & _
-        "Leave blank to let Excel decide automatically.", _
-        "Chart Creator - Step 10 of 11: Y-Axis Gridlines", "")
-    If StrPtr(gridInput) = 0 Then Exit Sub
-
-    Dim yAxisLines As Integer
-    If IsNumeric(Trim(gridInput)) And Trim(gridInput) <> "" Then
-        yAxisLines = CInt(Trim(gridInput))
-        If yAxisLines < 1 Then yAxisLines = 0
-    Else
-        yAxisLines = 0
+    ' 10. Y-axis gridline count (not applicable to pie/doughnut charts)
+    Dim yAxisLines As Integer: yAxisLines = 0
+    If Not isPieOrDoughnut Then
+        Dim gridInput As String
+        gridInput = InputBox( _
+            "Number of Y-axis gridlines (horizontal lines):" & vbCrLf & vbCrLf & _
+            "Examples (for 0%–50% data):" & vbCrLf & _
+            "  5  → lines at 10%, 20%, 30%, 40%, 50% (10% steps)" & vbCrLf & _
+            "  10 → lines at 5%, 10%, 15%... (5% steps)" & vbCrLf & _
+            "  4  → lines at 12.5%, 25%, 37.5%, 50%" & vbCrLf & vbCrLf & _
+            "Leave blank to let Excel decide automatically.", _
+            "Chart Creator - Step 10 of 11: Y-Axis Gridlines", "")
+        If StrPtr(gridInput) = 0 Then Exit Sub
+        If IsNumeric(Trim(gridInput)) And Trim(gridInput) <> "" Then
+            yAxisLines = CInt(Trim(gridInput))
+            If yAxisLines < 1 Then yAxisLines = 0
+        End If
     End If
 
     ' 11. Legend columns
@@ -280,30 +285,30 @@ Private Sub ShowChartCreatorSimple()
         legendCols = 0
     End If
 
-    ' 12. X-axis date label format (optional)
-    Dim xFmtInput As String
-    xFmtInput = InputBox( _
-        "X-axis date label format (leave blank to keep as-is):" & vbCrLf & vbCrLf & _
-        "Presets — type the number:" & vbCrLf & _
-        "  1  FY18, FY19...      (fiscal/calendar year)" & vbCrLf & _
-        "  2  Jan 18, May 18...  (month + short year)" & vbCrLf & _
-        "  3  January 2018...    (full month + full year)" & vbCrLf & _
-        "  4  2018, 2019...      (4-digit year only)" & vbCrLf & _
-        "  5  Q1 18, Q2 18...    (quarter + short year)" & vbCrLf & vbCrLf & _
-        "Or type any Excel date format directly, e.g.  yy  or  mmm-yy", _
-        "Chart Creator - Step 12 of 12: X-Axis Date Format", "")
-    If StrPtr(xFmtInput) = 0 Then Exit Sub
-
-    Dim xAxisNumFmt As String
-    Select Case Trim(xFmtInput)
-        Case "1": xAxisNumFmt = """FY""yy"
-        Case "2": xAxisNumFmt = "mmm yy"
-        Case "3": xAxisNumFmt = "mmmm yyyy"
-        Case "4": xAxisNumFmt = "yyyy"
-        Case "5": xAxisNumFmt = """Q""q yy"
-        Case "":  xAxisNumFmt = ""
-        Case Else: xAxisNumFmt = Trim(xFmtInput)
-    End Select
+    ' 12. X-axis date label format (not applicable to pie/doughnut charts)
+    Dim xAxisNumFmt As String: xAxisNumFmt = ""
+    If Not isPieOrDoughnut Then
+        Dim xFmtInput As String
+        xFmtInput = InputBox( _
+            "X-axis date label format (leave blank to keep as-is):" & vbCrLf & vbCrLf & _
+            "Presets — type the number:" & vbCrLf & _
+            "  1  FY18, FY19...      (fiscal/calendar year)" & vbCrLf & _
+            "  2  Jan 18, May 18...  (month + short year)" & vbCrLf & _
+            "  3  January 2018...    (full month + full year)" & vbCrLf & _
+            "  4  2018, 2019...      (4-digit year only)" & vbCrLf & _
+            "  5  Q1 18, Q2 18...    (quarter + short year)" & vbCrLf & vbCrLf & _
+            "Or type any Excel date format directly, e.g.  yy  or  mmm-yy", _
+            "Chart Creator - Step 12 of 12: X-Axis Date Format", "")
+        If StrPtr(xFmtInput) = 0 Then Exit Sub
+        Select Case Trim(xFmtInput)
+            Case "1": xAxisNumFmt = """FY""yy"
+            Case "2": xAxisNumFmt = "mmm yy"
+            Case "3": xAxisNumFmt = "mmmm yyyy"
+            Case "4": xAxisNumFmt = "yyyy"
+            Case "5": xAxisNumFmt = """Q""q yy"
+            Case Else: xAxisNumFmt = Trim(xFmtInput)
+        End Select
+    End If
 
     CreateChart rng, chartType, chartTitle, True, placement, True, False, _
                 colorScheme, Application.CentimetersToPoints(20), Application.CentimetersToPoints(12), fontName, lineWeight, Trim(yFmtInput), _
@@ -502,7 +507,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 sp.HasDataLabels = True
                 With sp.DataLabels
                     .ShowPercentage = True: .ShowValue = False
-                    .NumberFormat = "0.0%"
+                    .NumberFormat = "0%"
                     .Font.Name = fontName: .Font.Size = 15.6: .Font.Color = RGB(80, 80, 80)
                     .Position = xlLabelPositionOutsideEnd
                 End With
@@ -515,7 +520,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 sd.HasDataLabels = True
                 With sd.DataLabels
                     .ShowPercentage = True: .ShowValue = False
-                    .NumberFormat = "0.0%"
+                    .NumberFormat = "0%"
                     .Font.Name = fontName: .Font.Size = 15.6
                     .Font.Color = RGB(255, 255, 255): .Font.Bold = False
                 End With
