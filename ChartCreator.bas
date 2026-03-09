@@ -175,14 +175,32 @@ Private Sub ShowChartCreatorSimple()
         yAxisMinInput = InputBox( _
             "Y-axis starting value (minimum):" & vbCrLf & vbCrLf & _
             "Leave blank to start at 0." & vbCrLf & vbCrLf & _
-            "Examples:" & vbCrLf & _
-            "  0     → start at 0%  (default)" & vbCrLf & _
-            "  0.02  → start at 2%  (data stored as 0–1)" & vbCrLf & _
-            "  2     → start at 2   (data stored as whole numbers)", _
+            "For percentage charts just enter the number — e.g. type 2 to start at 2%.", _
             "Chart Creator - Step 6 of 9: Y-Axis Minimum", "")
         If StrPtr(yAxisMinInput) = 0 Then Exit Sub
         If IsNumeric(Trim(yAxisMinInput)) And Trim(yAxisMinInput) <> "" Then
             yAxisMin = CDbl(Trim(yAxisMinInput))
+            ' Auto-scale: if the axis will be shown as %, convert whole-number input
+            ' (e.g. user types 2 → stored as 0.02). Applies only when value >= 1 to
+            ' avoid double-dividing if the user already entered a decimal like 0.02.
+            Dim isPercentAxis As Boolean: isPercentAxis = False
+            If InStr(yFmtInput, "%") > 0 Then
+                isPercentAxis = True
+            ElseIf Trim(yFmtInput) = "" Then
+                ' No explicit format chosen – check the source data cells
+                Dim dataCell As Range
+                On Error Resume Next
+                Set dataCell = rng.SpecialCells(xlCellTypeConstants, xlNumbers)
+                On Error GoTo 0
+                If Not dataCell Is Nothing Then
+                    If InStr(dataCell.Cells(1, 1).NumberFormat, "%") > 0 Then
+                        isPercentAxis = True
+                    End If
+                End If
+            End If
+            If isPercentAxis And Abs(yAxisMin) >= 1 Then
+                yAxisMin = yAxisMin / 100
+            End If
         End If
     End If
 
