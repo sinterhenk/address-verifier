@@ -269,7 +269,7 @@ Public Sub CreateChart( _
 
     cht.ChartType = chartType
 
-    If hasHeaders Then
+    If hasHeaders And chartType <> xlPie And chartType <> xlDoughnut Then
         On Error Resume Next
         cht.SeriesCollection(1).XValues = dataRange.Rows(1)
         On Error GoTo 0
@@ -409,7 +409,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 .Format.Line.Visible = msoFalse
                 .MajorTickMark = xlNone: .MinorTickMark = xlNone
                 With .TickLabels.Font
-                    .Name = fontName: .Size = 9: .Color = GRAY_LABEL: .Bold = False
+                    .Name = fontName: .Size = 12.1: .Color = GRAY_LABEL: .Bold = False
                 End With
                 If .HasMajorGridlines Then .MajorGridlines.Format.Line.Visible = msoFalse
             End With
@@ -419,7 +419,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 .Format.Line.Visible = msoFalse
                 .MajorTickMark = xlNone: .MinorTickMark = xlNone
                 With .TickLabels.Font
-                    .Name = fontName: .Size = 9: .Color = GRAY_LABEL: .Bold = False
+                    .Name = fontName: .Size = 12.1: .Color = GRAY_LABEL: .Bold = False
                 End With
                 If Not .MajorGridlines Is Nothing Then
                     With .MajorGridlines.Format.Line
@@ -536,7 +536,7 @@ Private Sub FormatAxes(cht As Chart, fontName As String)
     With axCat
         .HasTitle = False
         .TickLabels.Font.Name = fontName
-        .TickLabels.Font.Size = 9
+        .TickLabels.Font.Size = 12.1
         .AxisBetweenCategories = True
         If .HasMajorGridlines Then .MajorGridlines.Format.Line.Visible = msoFalse
     End With
@@ -544,7 +544,7 @@ Private Sub FormatAxes(cht As Chart, fontName As String)
     With axVal
         .HasTitle = False
         .TickLabels.Font.Name = fontName
-        .TickLabels.Font.Size = 9
+        .TickLabels.Font.Size = 12.1
         With .MajorGridlines.Format.Line
             .Visible = msoTrue
             .ForeColor.RGB = RGB(200, 200, 200)
