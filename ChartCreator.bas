@@ -306,7 +306,7 @@ Private Sub ShowChartCreatorSimple()
     End Select
 
     CreateChart rng, chartType, chartTitle, True, placement, True, False, _
-                colorScheme, 480, 300, fontName, lineWeight, Trim(yFmtInput), _
+                colorScheme, Application.CentimetersToPoints(20), Application.CentimetersToPoints(12), fontName, lineWeight, Trim(yFmtInput), _
                 plotByRows, yAxisLines, legendCols, xAxisNumFmt
 
 End Sub
@@ -402,6 +402,9 @@ Public Sub CreateChart( _
         End If
     Next s
 
+    ' White fill for the host worksheet
+    ws.Cells.Interior.Color = RGB(255, 255, 255)
+
     ApplyColorScheme cht, colorScheme, chartType, lineWeight
 
     If colorScheme = "Canva" Then
@@ -478,6 +481,8 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                     End If
                 End If
             End If
+            ' Centre legend horizontally within the chart area
+            .Left = (cht.ChartArea.Width - .Width) / 2
         End With
     End If
 
