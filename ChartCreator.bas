@@ -158,7 +158,7 @@ Private Sub ShowChartCreatorSimple()
         "1  Right of data" & vbCrLf & _
         "2  Below data" & vbCrLf & _
         "3  New sheet", _
-        "Chart Creator - Step 5 of 5: Placement", "1")
+        "Chart Creator - Step 5 of 7: Placement", "1")
     If StrPtr(placeInput) = 0 Then Exit Sub
     If placeInput = "" Then placeInput = "1"
 
@@ -169,8 +169,49 @@ Private Sub ShowChartCreatorSimple()
         Case Else: placement = "Right"
     End Select
 
-    ' Create with sensible defaults for the InputBox path
-    CreateChart rng, chartType, chartTitle, True, placement, True, False, colorScheme, 480, 300
+    ' 6. Font
+    Dim fontInput As String
+    fontInput = InputBox( _
+        "Enter the number of the font:" & vbCrLf & vbCrLf & _
+        "1  Calibri  (Excel default)" & vbCrLf & _
+        "2  Arial" & vbCrLf & _
+        "3  Segoe UI  (Windows UI font)" & vbCrLf & _
+        "4  Helvetica Neue" & vbCrLf & _
+        "5  Georgia  (serif)" & vbCrLf & _
+        "6  Trebuchet MS" & vbCrLf & _
+        vbCrLf & "Or type any font name directly.", _
+        "Chart Creator - Step 6 of 7: Font", "1")
+    If StrPtr(fontInput) = 0 Then Exit Sub
+    If fontInput = "" Then fontInput = "1"
+
+    Dim fontName As String
+    Select Case Trim(fontInput)
+        Case "1": fontName = "Calibri"
+        Case "2": fontName = "Arial"
+        Case "3": fontName = "Segoe UI"
+        Case "4": fontName = "Helvetica Neue"
+        Case "5": fontName = "Georgia"
+        Case "6": fontName = "Trebuchet MS"
+        Case Else: fontName = Trim(fontInput)
+    End Select
+
+    ' 7. Line weight (shown for all types; mainly affects line/scatter charts)
+    Dim lwInput As String
+    lwInput = InputBox( _
+        "Line weight for line/scatter charts (in points):" & vbCrLf & vbCrLf & _
+        "1  = thin" & vbCrLf & _
+        "2  = medium (Canva default)" & vbCrLf & _
+        "3  = thick" & vbCrLf & vbCrLf & _
+        "Or type any number (e.g. 1.5, 2.5)", _
+        "Chart Creator - Step 7 of 7: Line Weight", "2")
+    If StrPtr(lwInput) = 0 Then Exit Sub
+    If lwInput = "" Or Not IsNumeric(lwInput) Then lwInput = "2"
+
+    Dim lineWeight As Double
+    lineWeight = CDbl(lwInput)
+
+    CreateChart rng, chartType, chartTitle, True, placement, True, False, _
+                colorScheme, 480, 300, fontName, lineWeight
 
 End Sub
 
@@ -187,7 +228,9 @@ Public Sub CreateChart( _
     showLabels  As Boolean, _
     colorScheme As String, _
     chartW      As Double, _
-    chartH      As Double _
+    chartH      As Double, _
+    Optional fontName   As String = "Calibri", _
+    Optional lineWeight As Double = 2 _
 )
 
     Dim ws        As Worksheet
@@ -236,16 +279,23 @@ Public Sub CreateChart( _
         cht.HasTitle = True
         cht.ChartTitle.Text = chartTitle
         With cht.ChartTitle.Font
+            .Name = fontName
             .Bold = False
-            .Size = 11
-            .Color = RGB(100, 100, 100)
+            .Size = 13
+            .Color = RGB(80, 80, 80)
         End With
     Else
         cht.HasTitle = False
     End If
 
     cht.HasLegend = showLegend
-    If showLegend Then cht.Legend.Position = xlLegendPositionBottom
+    If showLegend Then
+        cht.Legend.Position = xlLegendPositionBottom
+        With cht.Legend.Font
+            .Name = fontName
+            .Size = 9
+        End With
+    End If
 
     Dim s As Series
     For Each s In cht.SeriesCollection
@@ -255,18 +305,19 @@ Public Sub CreateChart( _
                 .ShowValue = True
                 .ShowSeriesName = False
                 .ShowCategoryName = False
+                .Font.Name = fontName
                 .Font.Size = 9
             End With
         End If
     Next s
 
-    ApplyColorScheme cht, colorScheme, chartType
+    ApplyColorScheme cht, colorScheme, chartType, lineWeight
 
     If colorScheme = "Canva" Then
-        ApplyCanvaStyle cht, chartType, showLegend
+        ApplyCanvaStyle cht, chartType, showLegend, fontName
     Else
         If chartType <> xlPie And chartType <> xlDoughnut And chartType <> xlRadar Then
-            FormatAxes cht
+            FormatAxes cht, fontName
         End If
     End If
 
@@ -280,7 +331,7 @@ End Sub
 ' ============================================================
 ' CANVA STYLE
 ' ============================================================
-Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boolean)
+Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boolean, fontName As String)
 
     Const GRAY_LABEL  As Long = 8947848
     Const GRAY_GRID   As Long = 14540253
@@ -302,14 +353,14 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
             .Format.Line.Visible = msoFalse
             .Interior.Color = WHITE
             With .Font
-                .Size = 8: .Color = GRAY_LABEL: .Bold = False
+                .Name = fontName: .Size = 9: .Color = GRAY_LABEL: .Bold = False
             End With
         End With
     End If
 
     If cht.HasTitle Then
         With cht.ChartTitle.Font
-            .Size = 11: .Color = RGB(80, 80, 80): .Bold = False
+            .Name = fontName: .Size = 13: .Color = RGB(80, 80, 80): .Bold = False
         End With
     End If
 
@@ -323,7 +374,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 sp.HasDataLabels = True
                 With sp.DataLabels
                     .ShowPercentage = True: .ShowValue = False
-                    .Font.Size = 9: .Font.Color = RGB(80, 80, 80)
+                    .Font.Name = fontName: .Font.Size = 9: .Font.Color = RGB(80, 80, 80)
                     .Position = xlLabelPositionOutsideEnd
                 End With
             Next sp
@@ -335,8 +386,8 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 sd.HasDataLabels = True
                 With sd.DataLabels
                     .ShowPercentage = True: .ShowValue = False
-                    .Font.Size = 9: .Font.Color = RGB(255, 255, 255)
-                    .Font.Bold = False
+                    .Font.Name = fontName: .Font.Size = 9
+                    .Font.Color = RGB(255, 255, 255): .Font.Bold = False
                 End With
             Next sd
 
@@ -346,6 +397,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
             With axR.MajorGridlines.Format.Line
                 .Visible = msoTrue: .ForeColor.RGB = GRAY_GRID: .Weight = 0.5
             End With
+            axR.TickLabels.Font.Name = fontName
 
         Case Else
             Dim axCat As Axis, axVal As Axis
@@ -357,7 +409,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 .Format.Line.Visible = msoFalse
                 .MajorTickMark = xlNone: .MinorTickMark = xlNone
                 With .TickLabels.Font
-                    .Size = 9: .Color = GRAY_LABEL: .Bold = False
+                    .Name = fontName: .Size = 9: .Color = GRAY_LABEL: .Bold = False
                 End With
                 If .HasMajorGridlines Then .MajorGridlines.Format.Line.Visible = msoFalse
             End With
@@ -367,7 +419,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 .Format.Line.Visible = msoFalse
                 .MajorTickMark = xlNone: .MinorTickMark = xlNone
                 With .TickLabels.Font
-                    .Size = 9: .Color = GRAY_LABEL: .Bold = False
+                    .Name = fontName: .Size = 9: .Color = GRAY_LABEL: .Bold = False
                 End With
                 If Not .MajorGridlines Is Nothing Then
                     With .MajorGridlines.Format.Line
@@ -385,7 +437,7 @@ End Sub
 ' ============================================================
 ' COLOR SCHEMES (8 colours each)
 ' ============================================================
-Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long)
+Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long, lineWeight As Double)
 
     Dim palettes As Variant
 
@@ -449,7 +501,7 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long)
         s.Format.Line.ForeColor.RGB = clr
         If chartType = xlLine Or chartType = xlLineMarkers Or _
            chartType = xlXYScatterLines Then
-            s.Format.Line.Weight = 1.5
+            s.Format.Line.Weight = lineWeight
             If chartType = xlLine Then s.MarkerStyle = xlMarkerStyleNone
         End If
         i = i + 1
@@ -458,7 +510,7 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long)
 End Sub
 
 ' ============================================================
-Private Sub FormatAxes(cht As Chart)
+Private Sub FormatAxes(cht As Chart, fontName As String)
     On Error Resume Next
     Dim axCat As Axis, axVal As Axis
     Set axCat = cht.Axes(xlCategory)
@@ -466,14 +518,16 @@ Private Sub FormatAxes(cht As Chart)
 
     With axCat
         .HasTitle = False
-        .TickLabels.Font.Size = 10
+        .TickLabels.Font.Name = fontName
+        .TickLabels.Font.Size = 9
         .AxisBetweenCategories = True
         If .HasMajorGridlines Then .MajorGridlines.Format.Line.Visible = msoFalse
     End With
 
     With axVal
         .HasTitle = False
-        .TickLabels.Font.Size = 10
+        .TickLabels.Font.Name = fontName
+        .TickLabels.Font.Size = 9
         With .MajorGridlines.Format.Line
             .Visible = msoTrue
             .ForeColor.RGB = RGB(200, 200, 200)
