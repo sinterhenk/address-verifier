@@ -18,7 +18,7 @@ Attribute VB_Exposed = False
 '
 ' NOTE: Because .frx (binary) is not included here, import
 ' ChartFormCode.bas instead and let InitForm() build the
-' controls programmatically — see README for instructions.
+' controls programmatically - see README for instructions.
 ' ============================================================
 Option Explicit
 
@@ -164,7 +164,7 @@ Private Sub PopulateDefaults()
     Next sc
     cboColor.ListIndex = 0  ' Canva is default
 
-    ' Size defaults (points; 1pt ≈ 1/72 inch)
+    ' Size defaults (points; 1pt = approx 1/72 inch)
     txtW.Text = "480"
     txtH.Text = "300"
 

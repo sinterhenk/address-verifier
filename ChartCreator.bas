@@ -22,7 +22,7 @@ Public Const CC_STACKED_BAR As Long = xlBarStacked             ' 58
 Public Const CC_STACKED_COL As Long = xlColumnStacked          ' 52
 
 ' ============================================================
-' Entry point — assign this to a button or keyboard shortcut
+' Entry point - assign this to a button or keyboard shortcut
 ' ============================================================
 Public Sub ShowChartCreator()
     Dim frm As ChartForm
@@ -35,7 +35,7 @@ End Sub
 ' Recolor series on the currently selected chart interactively.
 ' Select a chart (click it), then run this macro via Alt+F8.
 ' For each series you can type a hex color (#2A556C) or
-' R,G,B values (42,85,108) — leave blank to keep current color.
+' R,G,B values (42,85,108) - leave blank to keep current color.
 ' ============================================================
 Public Sub CustomizeChartColors()
 
@@ -71,12 +71,12 @@ Public Sub CustomizeChartColors()
               "(Cancel stops editing all series)"
 
         input = InputBox(msg, "Series " & i & " of " & _
-                         cht.SeriesCollection.Count & " — Customize Color", curHex)
+                         cht.SeriesCollection.Count & " - Customize Color", curHex)
 
-        ' Cancel pressed → stop entirely
+        ' Cancel pressed -> stop entirely
         If StrPtr(input) = 0 Then Exit For
 
-        ' Blank → skip this series
+        ' Blank -> skip this series
         If Trim(input) = "" Then
             i = i + 1
         Else
@@ -98,7 +98,7 @@ Public Sub CustomizeChartColors()
 End Sub
 
 ' ============================================================
-' Core chart creation — called by the form
+' Core chart creation - called by the form
 ' ============================================================
 Public Sub CreateChart( _
     dataRange   As Range, _
@@ -211,7 +211,7 @@ Public Sub CreateChart( _
 End Sub
 
 ' ============================================================
-' CANVA STYLE — clean white editorial look matching Canva output
+' CANVA STYLE - clean white editorial look matching Canva output
 ' ============================================================
 Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boolean)
 
@@ -354,7 +354,7 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long)
 
         Case "Canva"
             If chartType = xlDoughnut Or chartType = xlPie Then
-                ' 8-colour muted palette — first 5 match the Canva doughnut image
+                ' 8-colour muted palette - first 5 match the Canva doughnut image
                 palettes = Array( _
                     RGB(148, 58,  58),  ' dark red/burgundy
                     RGB(52,  88,  92),  ' dark teal
@@ -365,7 +365,7 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long)
                     RGB(95,  115, 118), ' dusty teal
                     RGB(160, 148, 128)) ' warm sand
             Else
-                ' 8-colour muted palette — first 4 match the Canva bar/line images
+                ' 8-colour muted palette - first 4 match the Canva bar/line images
                 palettes = Array( _
                     RGB(68,  103, 106), ' muted teal
                     RGB(188, 178, 156), ' light tan/beige
@@ -407,7 +407,7 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long)
                 RGB(100, 200, 120), RGB(160, 100, 220),  RGB(240, 110, 160), _
                 RGB(50,  150, 200), RGB(200, 200, 60))
 
-        Case Else  ' "Default" — leave Excel's own colours
+        Case Else  ' "Default" - leave Excel's own colours
             Exit Sub
 
     End Select
@@ -491,7 +491,7 @@ End Function
 ' Color helpers
 ' ============================================================
 
-' Parse a color string — supports "#RRGGBB" or "R,G,B"
+' Parse a color string - supports "#RRGGBB" or "R,G,B"
 ' Returns -1 on failure
 Private Function ParseColor(s As String) As Long
     On Error GoTo Fail
