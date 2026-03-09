@@ -147,88 +147,10 @@ Private Sub ShowChartCreatorSimple()
                           "Chart Creator - Step 4 of 10: Title", "")
     If StrPtr(chartTitle) = 0 Then Exit Sub
 
-    ' 4. Color scheme
-    Dim colorInput As String
-    colorInput = InputBox( _
-        "Enter the number of the color scheme:" & vbCrLf & vbCrLf & _
-        "1  Canva (muted, editorial)" & vbCrLf & _
-        "2  Default (Excel colours)" & vbCrLf & _
-        "3  Office" & vbCrLf & _
-        "4  Vivid" & vbCrLf & _
-        "5  Pastel" & vbCrLf & _
-        "6  Greyscale" & vbCrLf & _
-        "7  Dark", _
-        "Chart Creator - Step 5 of 10: Colors", "1")
-    If StrPtr(colorInput) = 0 Then Exit Sub
-    If colorInput = "" Then colorInput = "1"
-
-    Dim schemeNames As Variant
-    schemeNames = Array("Canva", "Default", "Office", "Vivid", "Pastel", "Greyscale", "Dark")
-    Dim sIdx As Integer
-    sIdx = CInt(colorInput) - 1
-    If sIdx < 0 Or sIdx > 6 Then sIdx = 0
-    Dim colorScheme As String
-    colorScheme = CStr(schemeNames(sIdx))
-
-    ' 5. Placement
-    Dim placeInput As String
-    placeInput = InputBox( _
-        "Where should the chart go?" & vbCrLf & vbCrLf & _
-        "1  Right of data" & vbCrLf & _
-        "2  Below data" & vbCrLf & _
-        "3  New sheet", _
-        "Chart Creator - Step 6 of 10: Placement", "1")
-    If StrPtr(placeInput) = 0 Then Exit Sub
-    If placeInput = "" Then placeInput = "1"
-
-    Dim placement As String
-    Select Case placeInput
-        Case "2": placement = "Below"
-        Case "3": placement = "NewSheet"
-        Case Else: placement = "Right"
-    End Select
-
-    ' 6. Font
-    Dim fontInput As String
-    fontInput = InputBox( _
-        "Enter the number of the font:" & vbCrLf & vbCrLf & _
-        "1  Libre Baskerville  (Canva default - must be installed)" & vbCrLf & _
-        "2  Calibri  (Excel default)" & vbCrLf & _
-        "3  Arial" & vbCrLf & _
-        "4  Segoe UI" & vbCrLf & _
-        "5  Georgia  (serif)" & vbCrLf & _
-        "6  Trebuchet MS" & vbCrLf & _
-        vbCrLf & "Or type any font name directly.", _
-        "Chart Creator - Step 7 of 10: Font", "1")
-    If StrPtr(fontInput) = 0 Then Exit Sub
-    If fontInput = "" Then fontInput = "1"
-
-    Dim fontName As String
-    Select Case Trim(fontInput)
-        Case "1": fontName = "Libre Baskerville"
-        Case "2": fontName = "Calibri"
-        Case "3": fontName = "Arial"
-        Case "4": fontName = "Segoe UI"
-        Case "5": fontName = "Georgia"
-        Case "6": fontName = "Trebuchet MS"
-        Case Else: fontName = Trim(fontInput)
-    End Select
-
-    ' 7. Line weight (not applicable to pie/doughnut charts)
-    Dim lineWeight As Double: lineWeight = 2
-    If Not isPieOrDoughnut Then
-        Dim lwInput As String
-        lwInput = InputBox( _
-            "Line weight for line/scatter charts (in points):" & vbCrLf & vbCrLf & _
-            "1  = thin" & vbCrLf & _
-            "2  = medium (Canva default)" & vbCrLf & _
-            "3  = thick" & vbCrLf & vbCrLf & _
-            "Or type any number (e.g. 1.5, 2.5)", _
-            "Chart Creator - Step 8 of 10: Line Weight", "2")
-        If StrPtr(lwInput) = 0 Then Exit Sub
-        If lwInput = "" Or Not IsNumeric(lwInput) Then lwInput = "2"
-        lineWeight = CDbl(lwInput)
-    End If
+    Dim colorScheme As String: colorScheme = "Canva"
+    Dim placement As String:   placement   = "Right"
+    Dim fontName As String:    fontName    = "Libre Baskerville"
+    Dim lineWeight As Double:  lineWeight  = 2
 
     ' 8. Y-axis number format (not applicable to pie/doughnut charts)
     Dim yFmtInput As String: yFmtInput = ""
@@ -242,7 +164,7 @@ Private Sub ShowChartCreatorSimple()
             "  #,##0   → 1,234" & vbCrLf & _
             "  #,##0.0 → 1,234.5" & vbCrLf & vbCrLf & _
             "Leave blank to keep source data format (or use auto % rounding).", _
-            "Chart Creator - Step 9 of 10: Y-Axis Format", "")
+            "Chart Creator - Step 5 of 8: Y-Axis Format", "")
         If StrPtr(yFmtInput) = 0 Then Exit Sub
     End If
 
@@ -257,7 +179,7 @@ Private Sub ShowChartCreatorSimple()
             "  10 → lines at 5%, 10%, 15%... (5% steps)" & vbCrLf & _
             "  4  → lines at 12.5%, 25%, 37.5%, 50%" & vbCrLf & vbCrLf & _
             "Leave blank to let Excel decide automatically.", _
-            "Chart Creator - Step 10 of 11: Y-Axis Gridlines", "")
+            "Chart Creator - Step 6 of 8: Y-Axis Gridlines", "")
         If StrPtr(gridInput) = 0 Then Exit Sub
         If IsNumeric(Trim(gridInput)) And Trim(gridInput) <> "" Then
             yAxisLines = CInt(Trim(gridInput))
@@ -274,7 +196,7 @@ Private Sub ShowChartCreatorSimple()
         "  3  →  3 per row  – e.g. 6 series → 3×2 grid" & vbCrLf & vbCrLf & _
         "Any other number = that many entries per row." & vbCrLf & _
         "Leave blank to let Excel decide automatically.", _
-        "Chart Creator - Step 11 of 11: Legend Layout", "1")
+        "Chart Creator - Step 7 of 8: Legend Layout", "1")
     If StrPtr(legColInput) = 0 Then Exit Sub
 
     Dim legendCols As Integer
@@ -298,7 +220,7 @@ Private Sub ShowChartCreatorSimple()
             "  4  2018, 2019...      (4-digit year only)" & vbCrLf & _
             "  5  Q1 18, Q2 18...    (quarter + short year)" & vbCrLf & vbCrLf & _
             "Or type any Excel date format directly, e.g.  yy  or  mmm-yy", _
-            "Chart Creator - Step 12 of 12: X-Axis Date Format", "")
+            "Chart Creator - Step 8 of 8: X-Axis Date Format", "")
         If StrPtr(xFmtInput) = 0 Then Exit Sub
         Select Case Trim(xFmtInput)
             Case "1": xAxisNumFmt = """FY""yy"
