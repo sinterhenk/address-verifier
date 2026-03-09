@@ -445,17 +445,15 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long, 
 
         Case "Canva"
             If chartType = xlDoughnut Or chartType = xlPie Then
-                ' Order matches Canva: sage-green, light beige, dark teal,
-                ' burgundy, dark charcoal, warm sand, dusty teal, deep rose
                 palettes = Array( _
-                    RGB(105, 125, 115), RGB(190, 180, 160), RGB(60, 90, 100), _
-                    RGB(110, 45, 45), RGB(50, 60, 63), RGB(160, 148, 128), _
-                    RGB(95, 115, 118), RGB(148, 58, 58))
+                    RGB(111, 62, 59), RGB(129, 126, 111), RGB(201, 195, 183), _
+                    RGB(120, 132, 132), RGB(77, 78, 80), RGB(129, 126, 111), _
+                    RGB(201, 195, 183), RGB(120, 132, 132))
             Else
                 palettes = Array( _
-                    RGB(68, 103, 106), RGB(188, 178, 156), RGB(32, 85, 92), _
-                    RGB(142, 127, 80), RGB(148, 58, 58), RGB(72, 83, 86), _
-                    RGB(212, 204, 188), RGB(106, 130, 100))
+                    RGB(129, 126, 111), RGB(201, 195, 183), RGB(30, 76, 96), _
+                    RGB(138, 125, 73), RGB(111, 62, 59), RGB(120, 132, 132), _
+                    RGB(77, 78, 80), RGB(201, 195, 183))
             End If
 
         Case "Office"
