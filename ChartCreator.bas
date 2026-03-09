@@ -281,7 +281,7 @@ Public Sub CreateChart( _
         With cht.ChartTitle.Font
             .Name = fontName
             .Bold = False
-            .Size = 15.6
+            .Size = 13
             .Color = RGB(80, 80, 80)
         End With
     Else
@@ -306,7 +306,7 @@ Public Sub CreateChart( _
                 .ShowSeriesName = False
                 .ShowCategoryName = False
                 .Font.Name = fontName
-                .Font.Size = 9
+                .Font.Size = 15.6
             End With
         End If
     Next s
@@ -360,7 +360,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
 
     If cht.HasTitle Then
         With cht.ChartTitle.Font
-            .Name = fontName: .Size = 15.6: .Color = RGB(80, 80, 80): .Bold = False
+            .Name = fontName: .Size = 13: .Color = RGB(80, 80, 80): .Bold = False
         End With
     End If
 
@@ -374,7 +374,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 sp.HasDataLabels = True
                 With sp.DataLabels
                     .ShowPercentage = True: .ShowValue = False
-                    .Font.Name = fontName: .Font.Size = 9: .Font.Color = RGB(80, 80, 80)
+                    .Font.Name = fontName: .Font.Size = 15.6: .Font.Color = RGB(80, 80, 80)
                     .Position = xlLabelPositionOutsideEnd
                 End With
             Next sp
@@ -386,7 +386,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 sd.HasDataLabels = True
                 With sd.DataLabels
                     .ShowPercentage = True: .ShowValue = False
-                    .Font.Name = fontName: .Font.Size = 9
+                    .Font.Name = fontName: .Font.Size = 15.6
                     .Font.Color = RGB(255, 255, 255): .Font.Bold = False
                 End With
             Next sd
