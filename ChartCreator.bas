@@ -263,13 +263,13 @@ Private Sub ShowChartCreatorSimple()
     ' 11. Legend columns
     Dim legColInput As String
     legColInput = InputBox( _
-        "How many legend entries per row?" & vbCrLf & vbCrLf & _
-        "Controls the legend grid layout:" & vbCrLf & _
-        "  2  →  4 entries = 2×2  |  5 entries = 2×3" & vbCrLf & _
-        "  3  →  4 entries = 3+1  |  5 entries = 3+2  |  6 entries = 3×2" & vbCrLf & _
-        "  4  →  4 entries = 1 row of 4" & vbCrLf & vbCrLf & _
+        "Choose a legend layout (enter a number):" & vbCrLf & vbCrLf & _
+        "  1  →  Column  – entries stacked in one column  (default)" & vbCrLf & _
+        "  2  →  2 per row  – e.g. 4 series → 2×2 grid" & vbCrLf & _
+        "  3  →  3 per row  – e.g. 6 series → 3×2 grid" & vbCrLf & vbCrLf & _
+        "Any other number = that many entries per row." & vbCrLf & _
         "Leave blank to let Excel decide automatically.", _
-        "Chart Creator - Step 11 of 11: Legend Layout", "")
+        "Chart Creator - Step 11 of 11: Legend Layout", "1")
     If StrPtr(legColInput) = 0 Then Exit Sub
 
     Dim legendCols As Integer
