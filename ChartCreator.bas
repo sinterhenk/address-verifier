@@ -555,7 +555,7 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 End If
                 .MinimumScale = axMinCanva
                 If yAxisLines > 0 Then
-                    .MajorUnit = NiceUnit((.MaximumScale - .MinimumScale) / (yAxisLines - 1))
+                    .MajorUnit = (.MaximumScale - .MinimumScale) / (yAxisLines - 1)
                 End If
                 If Not .MajorGridlines Is Nothing Then
                     With .MajorGridlines.Format.Line
@@ -732,7 +732,7 @@ Private Sub FormatAxes(cht As Chart, fontName As String, Optional yAxisNumFmt As
         End If
         .MinimumScale = axMinFmt
         If yAxisLines > 0 Then
-            .MajorUnit = NiceUnit((.MaximumScale - .MinimumScale) / (yAxisLines - 1))
+            .MajorUnit = (.MaximumScale - .MinimumScale) / (yAxisLines - 1)
         End If
         With .MajorGridlines.Format.Line
             .Visible = msoTrue
@@ -786,24 +786,6 @@ Private Function ParseColor(s As String) As Long
     End If
 Fail:
     ParseColor = -1
-End Function
-
-' Round a raw axis interval to the nearest "nice" number (1, 2, 2.5, 5, 10, …)
-Private Function NiceUnit(rawUnit As Double) As Double
-    If rawUnit <= 0 Then NiceUnit = rawUnit: Exit Function
-    Dim mag As Double: mag = 10 ^ Int(Log(rawUnit) / Log(10))
-    Dim f As Double:   f   = rawUnit / mag
-    If f <= 1 Then
-        NiceUnit = mag
-    ElseIf f <= 2 Then
-        NiceUnit = 2 * mag
-    ElseIf f <= 2.5 Then
-        NiceUnit = 2.5 * mag
-    ElseIf f <= 5 Then
-        NiceUnit = 5 * mag
-    Else
-        NiceUnit = 10 * mag
-    End If
 End Function
 
 Private Function ColorToHex(clr As Long) As String
