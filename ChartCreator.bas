@@ -132,9 +132,9 @@ Private Sub ShowChartCreatorSimple()
         "2  Each COLUMN is one series" & vbCrLf & _
         "   (e.g. Col A = Company A, Col B = Company B...)" & vbCrLf & _
         "   Categories (e.g. FY years) run down rows", _
-        "Chart Creator - Step 3 of 10: Data Orientation", "1")
+        "Chart Creator - Step 3 of 10: Data Orientation", "2")
     If StrPtr(orientInput) = 0 Then Exit Sub
-    If orientInput = "" Then orientInput = "1"
+    If orientInput = "" Then orientInput = "2"
     Dim plotByRows As Boolean
     plotByRows = (Trim(orientInput) = "1")
 
