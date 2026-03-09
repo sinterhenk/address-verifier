@@ -32,6 +32,72 @@ Public Sub ShowChartCreator()
 End Sub
 
 ' ============================================================
+' Recolor series on the currently selected chart interactively.
+' Select a chart (click it), then run this macro via Alt+F8.
+' For each series you can type a hex color (#2A556C) or
+' R,G,B values (42,85,108) — leave blank to keep current color.
+' ============================================================
+Public Sub CustomizeChartColors()
+
+    Dim cht As Chart
+
+    ' Get the active chart
+    If ActiveChart Is Nothing Then
+        MsgBox "Please click on a chart first, then run this macro.", _
+               vbExclamation, "No chart selected"
+        Exit Sub
+    End If
+    Set cht = ActiveChart
+
+    Dim s       As Series
+    Dim i       As Integer
+    Dim input   As String
+    Dim clr     As Long
+    Dim msg     As String
+
+    i = 1
+    For Each s In cht.SeriesCollection
+
+        ' Show current color as hex in the prompt
+        Dim curHex As String
+        curHex = ColorToHex(s.Format.Fill.ForeColor.RGB)
+
+        msg = "Series " & i & ": " & s.Name & vbCrLf & vbCrLf & _
+              "Current color: " & curHex & vbCrLf & vbCrLf & _
+              "Enter new color as:" & vbCrLf & _
+              "  Hex:  #RRGGBB  (e.g. #2A556C)" & vbCrLf & _
+              "  RGB:  R,G,B    (e.g. 42,85,108)" & vbCrLf & vbCrLf & _
+              "Leave blank to keep current color." & vbCrLf & _
+              "(Cancel stops editing all series)"
+
+        input = InputBox(msg, "Series " & i & " of " & _
+                         cht.SeriesCollection.Count & " — Customize Color", curHex)
+
+        ' Cancel pressed → stop entirely
+        If StrPtr(input) = 0 Then Exit For
+
+        ' Blank → skip this series
+        If Trim(input) = "" Then
+            i = i + 1
+        Else
+            clr = ParseColor(Trim(input))
+            If clr = -1 Then
+                MsgBox "Couldn't parse """ & input & """." & vbCrLf & _
+                       "Use #RRGGBB or R,G,B format.", vbExclamation, "Bad color"
+            Else
+                s.Format.Fill.ForeColor.RGB = clr
+                s.Format.Line.ForeColor.RGB = clr
+                i = i + 1
+            End If
+        End If
+
+    Next s
+
+    MsgBox "Colors updated!", vbInformation, "Chart Creator"
+
+End Sub
+
+' ============================================================
 ' Core chart creation — called by the form
 ' ============================================================
 Public Sub CreateChart( _
@@ -128,7 +194,7 @@ Public Sub CreateChart( _
     ' ---- Colors ----
     ApplyColorScheme cht, colorScheme, chartType
 
-    ' ---- Style (Canva = full editorial look; others = basic axis formatting) ----
+    ' ---- Style ----
     If colorScheme = "Canva" Then
         ApplyCanvaStyle cht, chartType, showLegend
     Else
@@ -137,7 +203,10 @@ Public Sub CreateChart( _
         End If
     End If
 
-    MsgBox "Chart created successfully!", vbInformation, "Chart Creator"
+    MsgBox "Chart created successfully!" & vbCrLf & vbCrLf & _
+           "Tip: to change individual series colors, click the chart," & vbCrLf & _
+           "then run Alt+F8 > ChartCreator.CustomizeChartColors.", _
+           vbInformation, "Chart Creator"
 
 End Sub
 
@@ -191,7 +260,6 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
     Select Case chartType
 
         Case xlPie
-            ' No axes — just clean up labels
             Dim sp As Series
             For Each sp In cht.SeriesCollection
                 sp.HasDataLabels = True
@@ -205,41 +273,37 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
             Next sp
 
         Case xlDoughnut
-            ' Doughnut: large hole, percentage labels on segments
             cht.SeriesCollection(1).DoughnutHoleSize = 60
             Dim sd As Series
             For Each sd In cht.SeriesCollection
                 sd.HasDataLabels = True
                 With sd.DataLabels
-                    .ShowPercentage   = True
-                    .ShowValue        = False
-                    .Font.Size        = 9
-                    .Font.Color       = RGB(255, 255, 255)
-                    .Font.Bold        = False
+                    .ShowPercentage = True
+                    .ShowValue      = False
+                    .Font.Size      = 9
+                    .Font.Color     = RGB(255, 255, 255)
+                    .Font.Bold      = False
                 End With
             Next sd
 
         Case xlRadar
-            ' Radar: style gridlines only
             Dim axR As Axis
             Set axR = cht.Axes(xlValue)
             With axR.MajorGridlines.Format.Line
-                .Visible        = msoTrue
-                .ForeColor.RGB  = GRAY_GRID
-                .Weight         = 0.5
+                .Visible       = msoTrue
+                .ForeColor.RGB = GRAY_GRID
+                .Weight        = 0.5
             End With
 
         Case Else
-            ' Column, Bar, Line, Area, Scatter, Stacked variants
             Dim axCat As Axis
             Dim axVal As Axis
             Set axCat = cht.Axes(xlCategory)
             Set axVal = cht.Axes(xlValue)
 
-            ' Category axis
             With axCat
                 .HasTitle = False
-                .Format.Line.Visible = msoFalse     ' no axis line
+                .Format.Line.Visible = msoFalse
                 .MajorTickMark = xlNone
                 .MinorTickMark = xlNone
                 With .TickLabels.Font
@@ -247,16 +311,14 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                     .Color = GRAY_LABEL
                     .Bold  = False
                 End With
-                ' No category gridlines
                 If .HasMajorGridlines Then
                     .MajorGridlines.Format.Line.Visible = msoFalse
                 End If
             End With
 
-            ' Value axis
             With axVal
                 .HasTitle = False
-                .Format.Line.Visible = msoFalse     ' no axis line
+                .Format.Line.Visible = msoFalse
                 .MajorTickMark = xlNone
                 .MinorTickMark = xlNone
                 With .TickLabels.Font
@@ -264,7 +326,6 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                     .Color = GRAY_LABEL
                     .Bold  = False
                 End With
-                ' Light gray solid gridlines (Canva look)
                 If Not .MajorGridlines Is Nothing Then
                     With .MajorGridlines.Format.Line
                         .Visible       = msoTrue
@@ -275,15 +336,6 @@ Private Sub ApplyCanvaStyle(cht As Chart, chartType As Long, showLegend As Boole
                 End If
             End With
 
-            ' For bar charts the axes are swapped
-            If chartType = xlBarClustered Or chartType = xlBarStacked Then
-                Dim axSer As Axis
-                Set axSer = cht.Axes(xlSeriesAxis)
-                If Not axSer Is Nothing Then
-                    axSer.Format.Line.Visible = msoFalse
-                End If
-            End If
-
     End Select
 
     On Error GoTo 0
@@ -292,6 +344,7 @@ End Sub
 
 ' ============================================================
 ' Apply a named color scheme to all series
+' (all palettes have 8 unique entries so larger charts auto-cycle)
 ' ============================================================
 Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long)
 
@@ -299,40 +352,42 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long)
 
     Select Case scheme
 
-        ' ---- Canva editorial palette (matched from images) ----
         Case "Canva"
             If chartType = xlDoughnut Or chartType = xlPie Then
-                ' 5-colour muted palette for doughnut/pie (matches image 3)
+                ' 8-colour muted palette — first 5 match the Canva doughnut image
                 palettes = Array( _
-                    RGB(148, 58,  58),   ' dark red/burgundy  (<2.2)
-                    RGB(52,  88,  92),   ' dark teal          (2.2-2.4)
-                    RGB(183, 177, 165),  ' light stone        (2.4-2.6)
-                    RGB(72,  83,  86),   ' dark slate         (2.6-2.8)
-                    RGB(212, 204, 188))  ' light cream        (>2.8)
+                    RGB(148, 58,  58),  ' dark red/burgundy
+                    RGB(52,  88,  92),  ' dark teal
+                    RGB(183, 177, 165), ' light stone
+                    RGB(72,  83,  86),  ' dark slate
+                    RGB(212, 204, 188), ' light cream
+                    RGB(110, 75,  75),  ' deep rose
+                    RGB(95,  115, 118), ' dusty teal
+                    RGB(160, 148, 128)) ' warm sand
             Else
-                ' 4-colour muted palette for column/line (matches images 1 & 2)
+                ' 8-colour muted palette — first 4 match the Canva bar/line images
                 palettes = Array( _
-                    RGB(68,  103, 106),  ' muted teal         (Dollar General)
-                    RGB(188, 178, 156),  ' light tan/beige    (Dollar Tree)
-                    RGB(32,  85,  92),   ' dark teal          (Five Below)
-                    RGB(142, 127, 80),   ' olive/khaki        (Dollarama)
-                    RGB(148, 58,  58),   ' dark red           (extra series 5)
-                    RGB(72,  83,  86),   ' dark slate         (extra series 6)
-                    RGB(212, 204, 188),  ' light cream        (extra series 7)
-                    RGB(183, 177, 165))  ' light stone        (extra series 8)
+                    RGB(68,  103, 106), ' muted teal
+                    RGB(188, 178, 156), ' light tan/beige
+                    RGB(32,  85,  92),  ' dark teal
+                    RGB(142, 127, 80),  ' olive/khaki
+                    RGB(148, 58,  58),  ' dark red
+                    RGB(72,  83,  86),  ' dark slate
+                    RGB(212, 204, 188), ' light cream
+                    RGB(106, 130, 100)) ' sage green
             End If
 
         Case "Office"
             palettes = Array( _
-                RGB(68, 114, 196), RGB(237, 125, 49), RGB(165, 165, 165), _
-                RGB(255, 192, 0),  RGB(91, 155, 213),  RGB(112, 173, 71), _
-                RGB(38, 68, 120),  RGB(158, 72, 14))
+                RGB(68,  114, 196), RGB(237, 125, 49),  RGB(165, 165, 165), _
+                RGB(255, 192, 0),   RGB(91,  155, 213), RGB(112, 173, 71), _
+                RGB(38,  68,  120), RGB(158, 72,  14))
 
         Case "Vivid"
             palettes = Array( _
-                RGB(255, 87, 51),  RGB(51, 181, 229), RGB(255, 195, 0), _
-                RGB(76, 187, 23),  RGB(142, 68, 173),  RGB(26, 188, 156), _
-                RGB(231, 76, 60),  RGB(52, 152, 219))
+                RGB(255, 87,  51),  RGB(51,  181, 229), RGB(255, 195, 0), _
+                RGB(76,  187, 23),  RGB(142, 68,  173), RGB(26,  188, 156), _
+                RGB(231, 76,  60),  RGB(52,  152, 219))
 
         Case "Pastel"
             palettes = Array( _
@@ -342,31 +397,29 @@ Private Sub ApplyColorScheme(cht As Chart, scheme As String, chartType As Long)
 
         Case "Greyscale"
             palettes = Array( _
-                RGB(50, 50, 50),   RGB(100, 100, 100), RGB(150, 150, 150), _
-                RGB(190, 190, 190), RGB(220, 220, 220), RGB(30, 30, 30), _
-                RGB(80, 80, 80),   RGB(130, 130, 130))
+                RGB(40,  40,  40),  RGB(85,  85,  85),  RGB(130, 130, 130), _
+                RGB(170, 170, 170), RGB(200, 200, 200),  RGB(60,  60,  60), _
+                RGB(110, 110, 110), RGB(150, 150, 150))
 
         Case "Dark"
             palettes = Array( _
-                RGB(0, 173, 181),  RGB(255, 170, 51),  RGB(220, 80, 80), _
-                RGB(100, 200, 120), RGB(160, 100, 220), RGB(240, 110, 160), _
-                RGB(50, 150, 200), RGB(200, 200, 60))
+                RGB(0,   173, 181), RGB(255, 170, 51),  RGB(220, 80,  80), _
+                RGB(100, 200, 120), RGB(160, 100, 220),  RGB(240, 110, 160), _
+                RGB(50,  150, 200), RGB(200, 200, 60))
 
         Case Else  ' "Default" — leave Excel's own colours
             Exit Sub
 
     End Select
 
-    ' Apply colors to each series (wraps if more series than palette entries)
     Dim i As Integer
     Dim s As Series
     i = 0
     For Each s In cht.SeriesCollection
         Dim clr As Long
         clr = palettes(i Mod (UBound(palettes) + 1))
-        s.Format.Fill.ForeColor.RGB  = clr
-        s.Format.Line.ForeColor.RGB  = clr
-        ' For line charts: thicker line weight, no markers (Canva look)
+        s.Format.Fill.ForeColor.RGB = clr
+        s.Format.Line.ForeColor.RGB = clr
         If chartType = xlLine Or chartType = xlLineMarkers Or _
            chartType = xlXYScatterLines Then
             s.Format.Line.Weight = 1.5
@@ -432,4 +485,53 @@ Public Function ChartTypeFromName(name As String) As Long
         Case "Stacked Column":          ChartTypeFromName = xlColumnStacked
         Case Else:                      ChartTypeFromName = xlColumnClustered
     End Select
+End Function
+
+' ============================================================
+' Color helpers
+' ============================================================
+
+' Parse a color string — supports "#RRGGBB" or "R,G,B"
+' Returns -1 on failure
+Private Function ParseColor(s As String) As Long
+    On Error GoTo Fail
+
+    s = Trim(s)
+
+    If Left(s, 1) = "#" And Len(s) = 7 Then
+        ' Hex format: #RRGGBB
+        Dim r As Integer, g As Integer, b As Integer
+        r = CInt("&H" & Mid(s, 2, 2))
+        g = CInt("&H" & Mid(s, 4, 2))
+        b = CInt("&H" & Mid(s, 6, 2))
+        ParseColor = RGB(r, g, b)
+        Exit Function
+    End If
+
+    If InStr(s, ",") > 0 Then
+        ' RGB format: R,G,B
+        Dim parts() As String
+        parts = Split(s, ",")
+        If UBound(parts) = 2 Then
+            ParseColor = RGB(CInt(Trim(parts(0))), _
+                             CInt(Trim(parts(1))), _
+                             CInt(Trim(parts(2))))
+            Exit Function
+        End If
+    End If
+
+Fail:
+    ParseColor = -1
+End Function
+
+' Convert an Excel BGR long (as stored in .RGB) back to a "#RRGGBB" hex string
+Private Function ColorToHex(clr As Long) As String
+    ' Excel RGB property returns BGR order internally; re-extract via RGB components
+    Dim r As Long, g As Long, b As Long
+    b = (clr \ 65536) And 255
+    g = (clr \ 256) And 255
+    r = clr And 255
+    ColorToHex = "#" & Right("0" & Hex(r), 2) & _
+                       Right("0" & Hex(g), 2) & _
+                       Right("0" & Hex(b), 2)
 End Function
